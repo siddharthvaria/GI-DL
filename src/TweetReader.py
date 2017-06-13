@@ -24,6 +24,7 @@ class TweetCorpus:
     '''
     def __init__(self, train_file, val_file, test_file):
 
+        self.max_len = 0
         self.aggress = set(['aggress', 'insult', 'snitch', 'threat', 'brag', 'aod', 'aware', 'authority', 'trust', 'fight', 'pride', 'power', 'lyric'])
         self.loss = set(['loss', 'grief', 'death', 'sad', 'alone', 'reac', 'guns'])
         # self.other = set(['deleted/ sex', 'money', 'gen, rel', 'rel, wom', 'authenticity', 'anger', 'retweet', 'wom', 'convo/neighborhood', 'gen, money', 'gen/women', 'deleted', 'gen/location', 'rel', 'indentity', 'amiable?', 'happy', 'sex', 'promo', 'mention', 'gen, happy', 'general', 'gen', 'identity', 'rel/gen', 'convo', 'joke', 'trans', 'wom, rel'])
@@ -43,6 +44,7 @@ class TweetCorpus:
         self.val_label_dist = None
         self.test_label_dist = None
         self.init_label_dists()
+
 
 #     def read_tweets(self, file_name):
 #
@@ -119,6 +121,8 @@ class TweetCorpus:
 
         self.char2idx = defaultdict(int)
 
+        # self.char2idx[''] = 0
+
         self._update_char2idx(self.train_tweets)
         self._update_char2idx(self.val_tweets)
         self._update_char2idx(self.test_tweets)
@@ -126,12 +130,14 @@ class TweetCorpus:
         self.idx2char = {id: c for c, id in self.char2idx.iteritems()}
 
     def _update_char2idx(self, tweets):
+
         for tweet in tweets:
             if 'CONTENT' in tweet:
-                content = tweet['CONTENT']
+                content = tweet['CONTENT'].strip()
+                self.max_len = max(self.max_len, len(content))
                 for char in content:
                     if char not in self.char2idx:
-                        self.char2idx[char] = len(self.char2idx)
+                        self.char2idx[char] = len(self.char2idx) + 1
 
     def init_label_dists(self):
 
@@ -152,7 +158,8 @@ class TweetCorpus:
                 label_dist[tweet['LABEL']] += 1
 
     def tweet2Indices(self, tweet):
-        return [self.char2idx[c] for c in tweet['CONTENT']]
+        indices = [self.char2idx[c] for c in tweet['CONTENT']]
+        return np.asarray(indices + [0 for _ in xrange(self.max_len - len(indices))])
 
     def label2Index(self, tweet):
         return self.label2idx[tweet['LABEL']]
@@ -176,6 +183,12 @@ class TweetCorpus:
 
         X = np.asarray(X)
         y = np.asarray(y)
+
+#         print 'type(X): ', type(X)
+#         print 'type(X[0]): ', type(X[0])
+#         print 'type(y): ', type(y)
+#         print 'type(y[0]): ', type(y[0])
+#         print 'X.shape', X.shape
 
         X_train, X_test, y_train, y_test = self._perform_stratified_shuffle_split(X, y, split_ratio = split_ratio)
         X_train, X_val, y_train, y_val = self._perform_stratified_shuffle_split(X_train, y_train, split_ratio = math.floor((split_ratio * 100) / (1.0 - split_ratio)) / 100)

@@ -1,4 +1,6 @@
 import csv
+from torch.utils.data import Dataset
+import torch
 
 def unicode_csv_reader1(utf8_data, **kwargs):
     csv_reader = csv.reader(utf8_data, **kwargs)
@@ -17,4 +19,20 @@ def test_unicode_csv_reader():
         print len(line)
         print line
 
-# test_unicode_csv_reader()
+class Dataset(Dataset):
+
+    def __init__(self, X, y):
+        self.X = X
+        self.y = y
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, index):
+        """
+        Args:
+            index (int): Index
+        Returns:
+            tuple: (tweet, target) where target is index of the target class.
+        """
+        return (self.X[index], self.y[index])
