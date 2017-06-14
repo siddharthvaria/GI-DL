@@ -7,10 +7,15 @@ import torch.optim as optim
 import time
 import math
 import os
+import cPickle
 import numpy as np
 from TweetReader import TweetCorpus
-from utils import Dataset
+from utils import Dataset1
 from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
+import itertools
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report
 
 torch.manual_seed(1)
 torch.cuda.manual_seed(1)
@@ -24,7 +29,7 @@ class TweetClassifier(nn.Module):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.output_size = output_size
-        self.max_seq_len = max_seq_len
+        # self.max_seq_len = max_seq_len
         print 'number of classes: ', self.output_size
         self.n_layers = n_layers
         self.encoder = nn.Embedding(input_size, hidden_size, padding_idx = 0)
@@ -50,13 +55,6 @@ class TweetClassifier(nn.Module):
 #        print 'output3.size(): ', output.size()
         return output, hidden
 
-#     def forward(self, input, hidden):
-#             batch_size = input.size(0)
-#             encoded = self.encoder(input)
-#             output, hidden = self.rnn(encoded.view(1, batch_size, -1), hidden)
-#             output = self.decoder(output.view(batch_size, -1))
-#             return output, hidden
-
     def init_hidden(self, batch_size):
         return (autograd.Variable(torch.zeros(self.n_layers, batch_size, self.hidden_size).cuda()),
                 autograd.Variable(torch.zeros(self.n_layers, batch_size, self.hidden_size).cuda()))
@@ -64,7 +62,7 @@ class TweetClassifier(nn.Module):
 #                 autograd.Variable(torch.zeros(self.n_layers, 1, self.hidden_size)))
 
 
-def get_tensors(data, target, evaluation = False):
+def get_variables(data, target, evaluation = False):
 #     print 'type(data):', type(data)
 #     print 'type(data[0]):', type(data[0])
 #     print 'type(target): ', type(target)
@@ -96,7 +94,7 @@ def fit(clf, data_loader):
         # data has dimension: sequence_length, batch_size
         # target had dimension: batch_size
 
-        data, target = get_tensors(data, target)
+        data, target = get_variables(data, target)
 
 #         print 'data.size(): ', data.size()
 
@@ -122,6 +120,9 @@ def fit(clf, data_loader):
 
 def predict(clf, data_loader):
 
+    predictions = []
+    targets = []
+
     clf.eval()
 
     test_loss = 0
@@ -130,9 +131,7 @@ def predict(clf, data_loader):
 
     for data, target in data_loader:
 
-        data, target = get_tensors(data, target, evaluation = True)
-
-#         print 'data.size(): ', data.size()
+        data, target = get_variables(data, target, evaluation = True)
 
         batch_size = len(data)
 
@@ -144,14 +143,52 @@ def predict(clf, data_loader):
 
         test_loss += loss.data[0]
 
-#         print 'output.size(): ', output.size()
-
+        # output is of type: <class 'torch.autograd.variable.Variable'>
+        # output.data is of type: <class 'torch.cuda.FloatTensor'>
+        # output.data.max(1) gives both the x and y co-ordinates so output.data.max(1)[1] gives the y co-ordinates.
         pred = output.data.max(1)[1]  # get the index of the max log-probability
+        pred = pred.view(batch_size)
+
         correct += pred.eq(target.data).cpu().sum()
 
-    # test_loss /= len(X)
+        predictions += pred.cpu().numpy().tolist()
+        targets += target.data.cpu().numpy().tolist()
 
-    return test_loss, correct
+    # test_loss /= len(X)
+    predictions = np.asarray(predictions)
+    targets = np.asarray(targets)
+
+    return test_loss, correct, predictions, targets
+
+def plot_confusion_matrix(cm, class_names, normalize = False, title = 'Confusion matrix', cmap = plt.cm.Blues):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+    plt.imshow(cm, interpolation = 'nearest', cmap = cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(class_names))
+    plt.xticks(tick_marks, class_names, rotation = 45)
+    plt.yticks(tick_marks, class_names)
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis = 1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    # print(cm)
+
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, cm[i, j],
+                 horizontalalignment = "center",
+                 color = "white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
 
 def main(train_file, val_file, test_file, model_save_dir, n_epochs, hidden_size, n_layers, dropout, learning_rate, batch_size):
 
@@ -165,9 +202,9 @@ def main(train_file, val_file, test_file, model_save_dir, n_epochs, hidden_size,
 #     print 'type(X_train): ', type(X_train)
 #     print 'type(X_train[0]): ', type(X_train[0])
 
-    train_dataset = Dataset(X_train, y_train)
-    val_dataset = Dataset(X_val, y_val)
-    test_dataset = Dataset(X_test, y_test)
+    train_dataset = Dataset1(X_train, y_train)
+    val_dataset = Dataset1(X_val, y_val)
+    test_dataset = Dataset1(X_test, y_test)
 
     kwargs = {'num_workers': 1, 'pin_memory': True}
     train_loader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True, **kwargs)
@@ -179,13 +216,15 @@ def main(train_file, val_file, test_file, model_save_dir, n_epochs, hidden_size,
 
     best_val_acc = None
     best_test_acc = None
+    best_test_predictions = None
+    best_test_targets = None
 
     for epoch in range(1, n_epochs + 1):
         epoch_start_time = time.time()
 #        print('-' * 89)
         fit(clf, train_loader)
 #        print('-' * 89)
-        val_loss, val_acc = predict(clf, val_loader)
+        val_loss, val_acc, _, _ = predict(clf, val_loader)
 #        print('-' * 89)
         print('| End of epoch {:3d} | training time: {:5.2f}s |'.format(epoch, (time.time() - epoch_start_time)))
         print('Val set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format
@@ -193,13 +232,23 @@ def main(train_file, val_file, test_file, model_save_dir, n_epochs, hidden_size,
         # Save the model if the validation accuracy is the best we've seen so far.
         if not best_val_acc or val_acc > best_val_acc:
             best_val_acc = val_acc
-            test_loss, test_acc = predict(clf, test_loader)
+            test_loss, test_acc, predictions, targets = predict(clf, test_loader)
             print('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format
                   (test_loss, test_acc, len(X_test), 100. * test_acc / len(X_test)))
             if test_acc > best_test_acc:
                 best_test_acc = test_acc
+                best_test_predictions = predictions
+                best_test_targets = targets
                 save(clf, model_save_dir)
-#        print('-' * 89)
+
+    np.set_printoptions(precision = 2)
+    cnf_matrix = confusion_matrix(best_test_targets, best_test_predictions)
+    # cPickle.dump(cnf_matrix, open('confusion_matrix.p', 'wb'))
+    print(classification_report(best_test_targets, best_test_predictions, target_names = ['aggress', 'loss', 'other']))
+
+    plot_confusion_matrix(cnf_matrix, ['aggress', 'loss', 'other'], normalize = False, title = 'Confusion matrix')
+    plt.show()
+    plt.savefig('confusion_matrix_best_model.png')
 
 if __name__ == '__main__':
 
