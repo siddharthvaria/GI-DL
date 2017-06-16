@@ -22,15 +22,14 @@ class TweetCorpus:
     The collapsed grief code included examples of distress, sadness, loneliness
     and death.
     '''
-    def __init__(self, train_file, val_file, test_file):
+    def __init__(self, train_file, val_file = None, test_file = None, is_labeled = True):
 
         self.max_len = 0
+        self.is_labeled = is_labeled
+
         self.aggress = set(['aggress', 'insult', 'snitch', 'threat', 'brag', 'aod', 'aware', 'authority', 'trust', 'fight', 'pride', 'power', 'lyric'])
         self.loss = set(['loss', 'grief', 'death', 'sad', 'alone', 'reac', 'guns'])
         # self.other = set(['deleted/ sex', 'money', 'gen, rel', 'rel, wom', 'authenticity', 'anger', 'retweet', 'wom', 'convo/neighborhood', 'gen, money', 'gen/women', 'deleted', 'gen/location', 'rel', 'indentity', 'amiable?', 'happy', 'sex', 'promo', 'mention', 'gen, happy', 'general', 'gen', 'identity', 'rel/gen', 'convo', 'joke', 'trans', 'wom, rel'])
-
-        self.label2idx = {'aggress':0, 'loss':1, 'other':2}
-        self.idx2label = {id: c for c, id in self.label2idx.iteritems()}
 
         self.train_tweets = self.read_tweets(train_file)
         self.val_tweets = self.read_tweets(val_file)
@@ -40,32 +39,10 @@ class TweetCorpus:
         self.idx2char = None
         self.init_char_dictionaries()
 
-        self.train_label_dist = None
-        self.val_label_dist = None
-        self.test_label_dist = None
-        self.init_label_dists()
-
-
-#     def read_tweets(self, file_name):
-#
-#         if file_name is None:
-#             return None
-#
-#         tweets = []
-#         with codecs.open(file_name, "r", "utf-8") as fh:
-#             columns = fh.readline().strip().split(',')
-#             # print columns
-#             for line in fh:
-#                 entries = line.strip().split(',')
-#                 if len(entries) != len(columns):
-#                     continue
-#                 # print len(tweets), len(entries)
-#                 tweet = {}
-#                 for idx, column in enumerate(columns):
-#                     tweet[column] = entries[idx]
-#                 tweets.append(tweet)
-#
-#         return tweets
+        self.label2idx = None
+        self.idx2label = None
+        if is_labeled:
+            self.init_label_dictionaries()
 
     def collapsed_label(self, fine_grained):
         fine_grained = fine_grained.lower()
@@ -80,20 +57,35 @@ class TweetCorpus:
         if file_name is None:
             return None
 
+        if self.is_labeled:
+            column_name = 'CONTENT'
+            delimiter = ','
+        else:
+            column_name = 'text'
+            delimiter = '\t'
+
         tweets = []
+
+        line_count = 0
 
         with open(file_name) as fh:
 
-            reader = unicode_csv_reader2(fh)
+            reader = unicode_csv_reader2(fh, delimiter = delimiter)
 
             for row in reader:
 
-                if row['CONTENT'] in (None, ''): continue
+                line_count += 1
 
-                label = ''
-                if 'LABEL' in row.keys():
-                    label = self.collapsed_label(row['LABEL'].lower())
-                    row['LABEL'] = label
+                # print line_count
+
+                if row[column_name] in (None, ''): continue
+
+                row[column_name] = row[column_name].strip()
+
+                if self.is_labeled:
+                    if 'LABEL' in row.keys():
+                        label = self.collapsed_label(row['LABEL'].lower())
+                        row['LABEL'] = label
 
                 tweets.append(row)
 
@@ -116,12 +108,7 @@ class TweetCorpus:
 
     def init_char_dictionaries(self):
 
-        if self.train_tweets is None or self.val_tweets is None or self.test_tweets is None:
-            return
-
         self.char2idx = defaultdict(int)
-
-        # self.char2idx[''] = 0
 
         self._update_char2idx(self.train_tweets)
         self._update_char2idx(self.val_tweets)
@@ -131,55 +118,128 @@ class TweetCorpus:
 
     def _update_char2idx(self, tweets):
 
+        if tweets is None:
+            return
+
+        if self.is_labeled:
+            column_name = 'CONTENT'
+        else:
+            column_name = 'text'
+
         for tweet in tweets:
-            if 'CONTENT' in tweet:
-                content = tweet['CONTENT'].strip()
+            if column_name in tweet:
+                content = tweet[column_name]
                 self.max_len = max(self.max_len, len(content))
                 for char in content:
                     if char not in self.char2idx:
                         self.char2idx[char] = len(self.char2idx) + 1
 
-    def init_label_dists(self):
+    def init_label_dictionaries(self):
 
-        if self.train_tweets is None or self.val_tweets is None or self.test_tweets is None:
+        self.label2idx = defaultdict(int)
+
+        self._update_label2idx(self.train_tweets)
+        self._update_label2idx(self.val_tweets)
+        self._update_label2idx(self.test_tweets)
+
+        self.idx2label = {id: c for c, id in self.label2idx.iteritems()}
+
+    def _update_label2idx(self, tweets):
+
+        if tweets is None:
             return
 
-        self.train_label_dist = defaultdict(int)
-        self.val_label_dist = defaultdict(int)
-        self.test_label_dist = defaultdict(int)
-
-        self._update_label_dist(self.train_tweets, self.train_label_dist)
-        self._update_label_dist(self.val_tweets, self.val_label_dist)
-        self._update_label_dist(self.test_tweets, self.test_label_dist)
-
-    def _update_label_dist(self, tweets, label_dist):
         for tweet in tweets:
             if 'LABEL' in tweet:
-                label_dist[tweet['LABEL']] += 1
+                label = tweet['LABEL']
+                if label not in self.label2idx:
+                    self.label2idx[label] = len(self.label2idx)
+
+    def get_class_names(self):
+
+        class_names = []
+        for idx in xrange(len(self.idx2label)):
+            class_names.append(self.idx2label[idx])
+
+        return class_names
 
     def tweet2Indices(self, tweet):
-        indices = [self.char2idx[c] for c in tweet['CONTENT']]
-        return np.asarray(indices + [0 for _ in xrange(self.max_len - len(indices))])
+
+        if self.is_labeled:
+            column_name = 'CONTENT'
+        else:
+            column_name = 'text'
+
+        indices = [self.char2idx[c] for c in tweet[column_name]]
+        return np.asarray([0 for _ in xrange(self.max_len - len(indices))] + indices)
 
     def label2Index(self, tweet):
         return self.label2idx[tweet['LABEL']]
+
+    def get_splits(self):
+
+        X_train = []
+        X_val = []
+        X_test = []
+        y_train = []
+        y_val = []
+        y_test = []
+
+        if self.train_tweets is not None:
+            for tweet in self.train_tweets:
+                X_train.append(self.tweet2Indices(tweet))
+                y_train.append(self.label2Index(tweet))
+
+        if self.val_tweets is not None:
+            for tweet in self.val_tweets:
+                X_val.append(self.tweet2Indices(tweet))
+                y_val.append(self.label2Index(tweet))
+
+        if self.test_tweets is not None:
+            for tweet in self.test_tweets:
+                X_test.append(self.tweet2Indices(tweet))
+                y_test.append(self.label2Index(tweet))
+
+        X_train = np.asarray(X_train)
+        y_train = np.asarray(y_train)
+        X_val = np.asarray(X_val)
+        y_val = np.asarray(y_val)
+        X_test = np.asarray(X_test)
+        y_test = np.asarray(y_test)
+
+        return X_train, X_val, X_test, y_train, y_val, y_test
+
+    def get_splits_for_lm(self):
+
+        X = []
+
+        if self.train_tweets is not None:
+            for tweet in self.train_tweets:
+                X.append(self.tweet2Indices(tweet))
+
+        X = np.asarray(X)
+
+        return X
 
     def get_stratified_splits(self, split_ratio = 0.2):
 
         X = []
         y = []
 
-        for tweet in self.train_tweets:
-            X.append(self.tweet2Indices(tweet))
-            y.append(self.label2Index(tweet))
+        if self.train_tweets is not None:
+            for tweet in self.train_tweets:
+                X.append(self.tweet2Indices(tweet))
+                y.append(self.label2Index(tweet))
 
-        for tweet in self.val_tweets:
-            X.append(self.tweet2Indices(tweet))
-            y.append(self.label2Index(tweet))
+        if self.val_tweets is not None:
+            for tweet in self.val_tweets:
+                X.append(self.tweet2Indices(tweet))
+                y.append(self.label2Index(tweet))
 
-        for tweet in self.test_tweets:
-            X.append(self.tweet2Indices(tweet))
-            y.append(self.label2Index(tweet))
+        if self.test_tweets is not None:
+            for tweet in self.test_tweets:
+                X.append(self.tweet2Indices(tweet))
+                y.append(self.label2Index(tweet))
 
         X = np.asarray(X)
         y = np.asarray(y)
