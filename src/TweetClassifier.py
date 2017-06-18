@@ -17,8 +17,8 @@ import itertools
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 
-torch.manual_seed(1)
-torch.cuda.manual_seed(1)
+# torch.manual_seed(1)
+# torch.cuda.manual_seed(1)
 
 class TweetClassifier(nn.Module):
 
@@ -282,6 +282,7 @@ def main(train_file, val_file, test_file, model_save_dir, n_epochs, hidden_size,
 
     plot_confusion_matrix(cnf_matrix, class_names, normalize = False, title = 'Confusion matrix')
     # plt.show()
+
     plt.savefig(os.path.join(model_save_dir, 'confusion_matrix_best_model.png'))
 
     plt.figure()

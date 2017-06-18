@@ -7,6 +7,8 @@ import torch.optim as optim
 import time
 import math
 import os
+import numpy as np
+from random import randint
 from TweetReader import TweetCorpus
 from utils import Dataset2
 from torch.utils.data import DataLoader
@@ -38,8 +40,9 @@ class TweetLanguageModel(nn.Module):
         output, hidden = self.lstm(emb, hidden)
         # At this point, the output has dimension: seq_len, batch_size, hidden_size
         # We reshape it to have dimension: batch_size * seq_len, hidden_size
-        output_size = output.size()
-        output = output.view(output_size[1], output_size[0], output_size[2]).view(output_size[0] * output_size[1], output_size[2])
+        output = output.transpose(0, 1)
+        output = torch.unbind(output, 0)
+        output = torch.cat(output, 0)
         # print 'reshaped output size: ', output.size()
         output = self.drop(output)
         output = self.decoder(output)
@@ -92,8 +95,6 @@ def fit(lm, data_loader, total_batches):
 
         output, hidden = lm(data, hidden)
 
-        # At this point, the output has dimension: batch_size, number_classes
-        # At this point, target has dimension: batch_size
         target_size = target.size()
         # print 'target_size: ', target_size
         loss = lm.criterion(output, target.view(target_size[0] * target_size[1]))
@@ -108,9 +109,26 @@ def fit(lm, data_loader, total_batches):
     train_loss /= count
     return train_loss
 
+def generate(lm, corpus, start_letter = 'A'):
+    start_letter_index = corpus.char2idx[start_letter]
+    inp = autograd.Variable(torch.LongTensor(np.asarray([[start_letter_index]])).cuda(), volatile = True)
+    hidden = lm.init_hidden(1)
+    output_name = start_letter
+    max_length = randint(50, 140)
+    for _ in range(max_length):
+        lm.eval()
+        output, hidden = lm(inp, hidden)
+        topv, topi = output.data.topk(1)
+        topi = topi[0][0]
+        letter = corpus.idx2char[topi]
+        output_name += letter
+        inp = autograd.Variable(torch.LongTensor(np.asarray([[topi]])).cuda(), volatile = True)
+
+    return output_name
+
 def main(tweets_file, model_save_dir, n_epochs, hidden_size, n_layers, dropout, learning_rate, batch_size):
 
-    corpus = TweetCorpus(tweets_file, is_labeled = False)
+    corpus = TweetCorpus(unlabeled_tweets_file = tweets_file)
 
     print 'len(vocab): ', len(corpus.char2idx)
 
@@ -139,13 +157,20 @@ def main(tweets_file, model_save_dir, n_epochs, hidden_size, n_layers, dropout, 
         # Save the model if the validation accuracy is the best we've seen so far.
         save(lm, model_save_dir)
 
+    lm_loaded = torch.load(os.path.join(model_save_dir, 'language_model.pt'))
+
+    start_letters = ['@', 'r']
+    for i in range(len(start_letters)):
+        op = generate(lm_loaded, corpus, start_letter = start_letters[i])
+        print op
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description = '')
 
     parser.add_argument('tweets_file', type = str)
     parser.add_argument('model_save_dir', type = str)
-    parser.add_argument('--n_epochs', type = int, default = 50)
+    parser.add_argument('--n_epochs', type = int, default = 20)
     parser.add_argument('--hidden_size', type = int, default = 256)
     parser.add_argument('--n_layers', type = int, default = 2)
     parser.add_argument('--dropout', type = float, default = 0.5)
