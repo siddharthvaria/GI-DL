@@ -13,8 +13,8 @@ from TweetReader import TweetCorpus
 from utils import Dataset2
 from torch.utils.data import DataLoader
 
-torch.manual_seed(1)
-torch.cuda.manual_seed(1)
+# torch.manual_seed(1)
+# torch.cuda.manual_seed(1)
 
 class TweetLanguageModel(nn.Module):
 

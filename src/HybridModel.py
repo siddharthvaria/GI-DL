@@ -37,8 +37,6 @@ class HybridModel(nn.Module):
         # decoder1 is for lm and decoder2 is for classifier
         self.decoder1 = nn.Linear(self.hidden_size, self.nlabels1)
         self.decoder2 = nn.Linear(self.hidden_size, self.nlabels2)
-        self.decoder_optimizer = optim.Adam(self.parameters(), lr = lr)
-        self.criterion = nn.CrossEntropyLoss()
 
     def forward(self, inp, hidden):
         emb = self.encoder(inp.t())
@@ -125,7 +123,7 @@ def plot_confusion_matrix(cm, class_names, normalize = False, title = 'Confusion
 
 def train_lm(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, learning_rate, batch_size):
 
-    def fit(lm, data_loader):
+    def fit(lm, opt, criterion, data_loader):
 
         train_loss = 0
 
@@ -135,12 +133,13 @@ def train_lm(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, l
 
         for (data, target) in data_loader:
 
+            lm.train()
+
             batches_processed += 1
             # data has dimension: batch_size, seq_len
             # target had dimension: batch_size
-            lm.train()
 
-            lm.decoder_optimizer.zero_grad()
+            opt.zero_grad()
 
             data, target = get_variables(data, target)
 
@@ -154,9 +153,9 @@ def train_lm(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, l
             # At this point, target has dimension: batch_size
             target_size = target.size()
             # print 'target_size: ', target_size
-            loss = lm.criterion(output, target.view(target_size[0] * target_size[1]))
+            loss = criterion(output, target.view(target_size[0] * target_size[1]))
             loss.backward()
-            lm.decoder_optimizer.step()
+            opt.step()
             train_loss += (loss.data[0] * target_size[0] * target_size[1])
             count += (target_size[0] * target_size[1])
 
@@ -166,8 +165,13 @@ def train_lm(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, l
         train_loss /= count
         return train_loss
 
+
     model1 = HybridModel('lm', len(corpus.char2idx) + 1, hidden_size, len(corpus.char2idx) + 1, len(corpus.label2idx), n_layers = n_layers, dropout = dropout, lr = learning_rate)
     model1 = model1.cuda()
+
+    optimizer = optim.Adam(model1.parameters(), lr = learning_rate)
+
+    loss_criterion = nn.CrossEntropyLoss()
 
     X_train = corpus.get_splits_for_lm()
 
@@ -183,17 +187,17 @@ def train_lm(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, l
     train_losses = []
     for epoch in range(1, n_epochs + 1):
         epoch_start_time = time.time()
-        train_loss = fit(model1, train_loader)
+        train_loss = fit(model1, optimizer, loss_criterion, train_loader)
         train_losses.append(train_loss)
         print('| End of epoch {:3d} | training time: {:5.2f}s |'.format(epoch, (time.time() - epoch_start_time)))
 #         _, train_acc, _, _ = predict(model, train_loader)
         print('Train set: Average loss: {:.4f}'.format(train_loss))
         # Save the model if the validation accuracy is the best we've seen so far.
-        save(model1, 'language_model_save1', model_save_dir, save_type = 1)
+        save(model1, 'language_model', model_save_dir, save_type = 1)
 
 def train_classifier(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, learning_rate, batch_size):
 
-    def fit(clf, data_loader):
+    def fit(clf, opt, criterion, data_loader):
 
         train_loss = 0
 
@@ -205,7 +209,7 @@ def train_classifier(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dr
             # target had dimension: batch_size
             clf.train()
 
-            clf.decoder_optimizer.zero_grad()
+            opt.zero_grad()
 
             data, target = get_variables(data, target)
 
@@ -217,16 +221,16 @@ def train_classifier(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dr
 
             # At this point, the output has dimension: batch_size, number_classes
             # At this point, target has dimension: batch_size
-            loss = clf.criterion(output, target)
+            loss = criterion(output, target)
             loss.backward()
-            clf.decoder_optimizer.step()
+            opt.step()
             train_loss += (loss.data[0] * bsz)
             count += bsz
 
         train_loss /= count
         return train_loss
 
-    def predict(clf, data_loader):
+    def predict(clf, criterion, data_loader):
 
         predictions = []
         targets = []
@@ -249,7 +253,7 @@ def train_classifier(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dr
 
             output, hidden = clf(data, hidden)
 
-            loss = clf.criterion(output, target)
+            loss = criterion(output, target)
 
             test_loss += (loss.data[0] * bsz)
 
@@ -262,6 +266,7 @@ def train_classifier(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dr
             correct += pred.eq(target.data).cpu().sum()
 
             predictions += pred.cpu().numpy().tolist()
+
             targets += target.data.cpu().numpy().tolist()
 
             count += bsz
@@ -283,6 +288,10 @@ def train_classifier(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dr
         model2.load_state_dict(torch.load(os.path.join(model_save_dir, 'language_model.pt')))
 
     model2 = model2.cuda()
+
+    optimizer = optim.Adam(model2.parameters(), lr = learning_rate)
+
+    loss_criterion = nn.CrossEntropyLoss()
 
     class_names = corpus.get_class_names()
 
@@ -315,13 +324,13 @@ def train_classifier(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dr
 
     for epoch in range(1, n_epochs + 1):
         epoch_start_time = time.time()
-        train_loss = fit(model2, train_loader)
+        train_loss = fit(model2, optimizer, loss_criterion, train_loader)
         train_losses.append(train_loss)
         print('| End of epoch {:3d} | training time: {:5.2f}s |'.format(epoch, (time.time() - epoch_start_time)))
-        _, train_acc, _, _ = predict(model2, train_loader)
+        _, train_acc, _, _ = predict(model2, loss_criterion, train_loader)
         print('Train set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format
               (train_loss, train_acc, len(X_train), 100. * train_acc / len(X_train)))
-        val_loss, val_acc, _, _ = predict(model2, val_loader)
+        val_loss, val_acc, _, _ = predict(model2, loss_criterion, val_loader)
         val_losses.append(val_loss)
         print('Val set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format
               (val_loss, val_acc, len(X_val), 100. * val_acc / len(X_val)))
@@ -329,7 +338,7 @@ def train_classifier(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dr
         if not best_val_acc or val_acc > best_val_acc:
             patience = 5
             best_val_acc = val_acc
-            test_loss, test_acc, predictions, targets = predict(model2, test_loader)
+            test_loss, test_acc, predictions, targets = predict(model2, loss_criterion, test_loader)
             print('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format
                   (test_loss, test_acc, len(X_test), 100. * test_acc / len(X_test)))
             if test_acc > best_test_acc:
