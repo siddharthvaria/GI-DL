@@ -165,6 +165,7 @@ def train_lm(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, l
         train_loss /= count
         return train_loss
 
+    save_type = 2
 
     model1 = HybridModel('lm', len(corpus.char2idx) + 1, hidden_size, len(corpus.char2idx) + 1, len(corpus.label2idx), n_layers = n_layers, dropout = dropout, lr = learning_rate)
     model1 = model1.cuda()
@@ -193,7 +194,7 @@ def train_lm(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, l
 #         _, train_acc, _, _ = predict(model, train_loader)
         print('Train set: Average loss: {:.4f}'.format(train_loss))
         # Save the model if the validation accuracy is the best we've seen so far.
-        save(model1, 'language_model', model_save_dir, save_type = 1)
+        save(model1, 'language_model', model_save_dir, save_type = save_type)
 
 def train_classifier(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, learning_rate, batch_size):
 
@@ -277,7 +278,7 @@ def train_classifier(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dr
 
         return test_loss, correct, predictions, targets
 
-    save_type = 1
+    save_type = 2
 
     if save_type == 1:
         model2 = torch.load(os.path.join(model_save_dir, 'language_model.pt'))
