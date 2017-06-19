@@ -156,7 +156,7 @@ def predict(clf, data_loader):
     predictions = np.asarray(predictions)
     targets = np.asarray(targets)
 
-    return test_loss, correct, predictions, targets
+    return test_loss, (100.0 * float(correct)) / len(predictions), predictions, targets
 
 def plot_confusion_matrix(cm, class_names, normalize = False, title = 'Confusion matrix', cmap = plt.cm.Blues):
     """
@@ -216,6 +216,7 @@ def main(train_file, val_file, test_file, model_save_dir, n_epochs, hidden_size,
     print 'len(vocab): ', len(corpus.char2idx)
     print 'len(label): ', len(corpus.label2idx)
 
+    # X_train, X_val, X_test, y_train, y_val, y_test = corpus.get_stratified_splits()
     X_train, X_val, X_test, y_train, y_val, y_test = corpus.get_splits()
 
     train_label_dist, val_label_dist, test_label_dist = corpus.get_label_dist(y_train, y_val, y_test)
@@ -234,8 +235,8 @@ def main(train_file, val_file, test_file, model_save_dir, n_epochs, hidden_size,
     clf = TweetClassifier(len(corpus.char2idx) + 1, hidden_size, len(corpus.label2idx), n_layers = n_layers, dropout = dropout, lr = learning_rate)
     clf = clf.cuda()
 
-    best_val_acc = None
-    best_test_acc = None
+    best_val_acc = 0
+    best_test_acc = 0
     best_test_predictions = None
     best_test_targets = None
 
@@ -254,15 +255,13 @@ def main(train_file, val_file, test_file, model_save_dir, n_epochs, hidden_size,
               (train_loss, train_acc, len(X_train), 100. * train_acc / len(X_train)))
         val_loss, val_acc, _, _ = predict(clf, val_loader)
         val_losses.append(val_loss)
-        print('Val set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format
-              (val_loss, val_acc, len(X_val), 100. * val_acc / len(X_val)))
+        print('Val set: Average loss: {:.4f}, Accuracy: {:.0f}%'.format(val_loss, val_acc))
         # Save the model if the validation accuracy is the best we've seen so far.
-        if not best_val_acc or val_acc > best_val_acc:
+        if val_acc > best_val_acc:
             patience = 5
             best_val_acc = val_acc
             test_loss, test_acc, predictions, targets = predict(clf, test_loader)
-            print('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format
-                  (test_loss, test_acc, len(X_test), 100. * test_acc / len(X_test)))
+            print('Test set: Average loss: {:.4f}, Accuracy: {:.0f}%'.format(test_loss, test_acc))
             if test_acc > best_test_acc:
                 best_test_acc = test_acc
                 best_test_predictions = predictions
@@ -300,7 +299,7 @@ if __name__ == '__main__':
     parser.add_argument('val_file', type = str)
     parser.add_argument('test_file', type = str)
     parser.add_argument('model_save_dir', type = str)
-    parser.add_argument('--n_epochs', type = int, default = 50)
+    parser.add_argument('--n_epochs', type = int, default = 15)
     parser.add_argument('--hidden_size', type = int, default = 256)
     parser.add_argument('--n_layers', type = int, default = 2)
     parser.add_argument('--dropout', type = float, default = 0.5)

@@ -276,7 +276,7 @@ def train_classifier(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dr
         predictions = np.asarray(predictions)
         targets = np.asarray(targets)
 
-        return test_loss, correct, predictions, targets
+        return test_loss, (100.0 * float(correct)) / len(predictions), predictions, targets
 
     save_type = 2
 
@@ -298,6 +298,7 @@ def train_classifier(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dr
 
     print 'len(label): ', len(corpus.label2idx)
 
+    # X_train, X_val, X_test, y_train, y_val, y_test = corpus.get_stratified_splits()
     X_train, X_val, X_test, y_train, y_val, y_test = corpus.get_splits()
 
     train_label_dist, val_label_dist, test_label_dist = corpus.get_label_dist(y_train, y_val, y_test)
@@ -313,8 +314,8 @@ def train_classifier(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dr
     val_loader = DataLoader(val_dataset, batch_size = batch_size, shuffle = True, **kwargs)
     test_loader = DataLoader(test_dataset, batch_size = batch_size, shuffle = True, **kwargs)
 
-    best_val_acc = None
-    best_test_acc = None
+    best_val_acc = 0
+    best_test_acc = 0
     best_test_predictions = None
     best_test_targets = None
 
@@ -329,19 +330,19 @@ def train_classifier(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dr
         train_losses.append(train_loss)
         print('| End of epoch {:3d} | training time: {:5.2f}s |'.format(epoch, (time.time() - epoch_start_time)))
         _, train_acc, _, _ = predict(model2, loss_criterion, train_loader)
-        print('Train set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format
-              (train_loss, train_acc, len(X_train), 100. * train_acc / len(X_train)))
+        print('Train set: Average loss: {:.4f}, Accuracy:{:.0f}%'.format
+              (train_loss, train_acc))
         val_loss, val_acc, _, _ = predict(model2, loss_criterion, val_loader)
         val_losses.append(val_loss)
-        print('Val set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format
-              (val_loss, val_acc, len(X_val), 100. * val_acc / len(X_val)))
+        print('Val set: Average loss: {:.4f}, Accuracy: {:.0f}%'.format
+              (val_loss, val_acc))
         # Save the model if the validation accuracy is the best we've seen so far.
-        if not best_val_acc or val_acc > best_val_acc:
+        if val_acc > best_val_acc:
             patience = 5
             best_val_acc = val_acc
             test_loss, test_acc, predictions, targets = predict(model2, loss_criterion, test_loader)
-            print('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format
-                  (test_loss, test_acc, len(X_test), 100. * test_acc / len(X_test)))
+            print('Test set: Average loss: {:.4f}, Accuracy: {:.0f}%'.format
+                  (test_loss, test_acc))
             if test_acc > best_test_acc:
                 best_test_acc = test_acc
                 best_test_predictions = predictions
