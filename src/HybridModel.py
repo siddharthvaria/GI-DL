@@ -185,7 +185,11 @@ def train_lm(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, l
     kwargs = {'num_workers': 1, 'pin_memory': True}
     train_loader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True, **kwargs)
 
+    best_train_loss = 1000000
+    patience = 3
+
     train_losses = []
+
     for epoch in range(1, n_epochs + 1):
         epoch_start_time = time.time()
         train_loss = fit(model1, optimizer, loss_criterion, train_loader)
@@ -193,8 +197,17 @@ def train_lm(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, l
         print('| End of epoch {:3d} | training time: {:5.2f}s |'.format(epoch, (time.time() - epoch_start_time)))
 #         _, train_acc, _, _ = predict(model, train_loader)
         print('Train set: Average loss: {:.4f}'.format(train_loss))
-        # Save the model if the validation accuracy is the best we've seen so far.
-        save(model1, 'language_model', model_save_dir, save_type = save_type)
+        if train_loss < best_train_loss:
+            best_train_loss = train_loss
+            patience = 3
+            # Save the model if the validation accuracy is the best we've seen so far.
+            save(model1, 'language_model', model_save_dir, save_type = save_type)
+        else:
+            patience -= 1
+
+        if patience <= 0:
+            print 'Early stopping . . .'
+            break
 
 def train_classifier(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, learning_rate, batch_size):
 
@@ -377,9 +390,9 @@ def main(train_file, val_file, test_file, tweets_file, model_save_dir, n_epochs,
 
     print 'len(vocab): ', len(corpus.char2idx)
 
-    # train_lm(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, learning_rate, batch_size)
+    train_lm(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, learning_rate, batch_size)
 
-    train_classifier(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, learning_rate, batch_size)
+    # train_classifier(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, learning_rate, batch_size)
 
 if __name__ == '__main__':
 
