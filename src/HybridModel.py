@@ -9,7 +9,7 @@ import math
 import os
 import numpy as np
 from TweetReader import TweetCorpus
-from utils import Dataset1, Dataset2
+from Datasets import Dataset1, Dataset2
 from torch.utils.data import DataLoader
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
@@ -377,7 +377,7 @@ def main(train_file, val_file, test_file, tweets_file, model_save_dir, n_epochs,
 
     print 'len(vocab): ', len(corpus.char2idx)
 
-    train_lm(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, learning_rate, batch_size)
+    # train_lm(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, learning_rate, batch_size)
 
     train_classifier(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, learning_rate, batch_size)
 
