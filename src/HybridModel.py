@@ -74,12 +74,16 @@ def time_since(since):
     return '%dm %ds' % (m, s)
 
 def save(model, model_save_name, model_save_dir, save_type = 1):
-    save_filename = os.path.join(model_save_dir, model_save_name + '.pt')
+
     if save_type == 1:
+        save_filename = os.path.join(model_save_dir, model_save_name + '.pt')
         torch.save(model, save_filename)
     else:
-        torch.save(model.state_dict(), save_filename)
-    print('Saved as %s' % save_filename)
+        save_filename = os.path.join(model_save_dir, model_save_name + '_lstm.pt')
+        torch.save(model.lstm.state_dict(), save_filename)
+        save_filename = os.path.join(model_save_dir, model_save_name + '_embeddings.pt')
+        torch.save(model.encoder.state_dict(), save_filename)
+    print('Model Saved . . .')
 
 def print_class_distributions(class_names, train_label_dist, val_label_dist, test_label_dist):
 
@@ -294,12 +298,14 @@ def train_classifier(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dr
     save_type = 2
 
     if save_type == 1:
-        model2 = torch.load(os.path.join(model_save_dir, 'language_model.pt'))
+        save_filename = os.path.join(model_save_dir, 'language_model.pt')
+        model2 = torch.load(save_filename)
         # change the mode from lm to clf
         model2.mode = 'clf'
     else:
         model2 = HybridModel('clf', len(corpus.char2idx) + 1, hidden_size, len(corpus.char2idx) + 1, len(corpus.label2idx), n_layers = n_layers, dropout = dropout, lr = learning_rate)
-        model2.load_state_dict(torch.load(os.path.join(model_save_dir, 'language_model.pt')))
+        model2.encoder.load_state_dict(torch.load(os.path.join(model_save_dir, 'language_model_embeddings.pt')))
+        model2.lstm.load_state_dict(torch.load(os.path.join(model_save_dir, 'language_model_lstm.pt')))
 
     model2 = model2.cuda()
 
@@ -392,7 +398,7 @@ def main(train_file, val_file, test_file, tweets_file, model_save_dir, n_epochs,
 
     train_lm(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, learning_rate, batch_size)
 
-    # train_classifier(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, learning_rate, batch_size)
+    train_classifier(corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, learning_rate, batch_size)
 
 if __name__ == '__main__':
 
@@ -403,7 +409,7 @@ if __name__ == '__main__':
     parser.add_argument('test_file', type = str)
     parser.add_argument('tweets_file', type = str)
     parser.add_argument('model_save_dir', type = str)
-    parser.add_argument('--n_epochs', type = int, default = 15)
+    parser.add_argument('--n_epochs', type = int, default = 25)
     parser.add_argument('--hidden_size', type = int, default = 256)
     parser.add_argument('--n_layers', type = int, default = 2)
     parser.add_argument('--dropout', type = float, default = 0.5)

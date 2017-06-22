@@ -1,11 +1,13 @@
 # from keras.preprocessing.text import Tokenizer
 # from keras.preprocessing.sequence import pad_sequences
 from keras.layers import Dropout
-from keras.layers import Input, Embedding, merge, LSTM, Dense, Bidirectional
+from keras.layers import Input, Embedding, merge, LSTM, Dense, Bidirectional, Lambda
 from keras.models import Model
-# from keras.layers.normalization import BatchNormalization
+from keras.layers.normalization import BatchNormalization
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.utils import np_utils
+from sklearn.model_selection import train_test_split
+from keras import backend as K
 from TweetReader import TweetCorpus
 from sklearn.metrics import classification_report
 
@@ -15,21 +17,49 @@ import os
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-def build_models(emb_matrix, kwargs):
+def reshape(x):
+    pass
 
-    nchars = emb_matrix.shape[0]
 
-    emb_dim = emb_matrix.shape[1]
+def build_lm_model(kwargs):
 
-    # embedding_layer = Embedding(nchars, emb_dim, weights = [emb_matrix], input_length = kwargs['max_seq_len'], trainable = True)
+    embedding_layer = Embedding(kwargs['nchars'], kwargs['hidden_size'], input_length = kwargs['max_seq_len'] - 1, mask_zero = True, trainable = True, name = 'embedding_layer')
 
-    embedding_layer = Embedding(nchars, emb_dim, input_length = kwargs['max_seq_len'], mask_zero = True, trainable = True)
+    lstm1 = LSTM(kwargs['hidden_size'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm1')
 
-    lstm1 = LSTM(kwargs['hidden_size'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True)
-    # lstm1 = LSTM(kwargs['hidden_size'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'])
+    lstm2 = LSTM(kwargs['hidden_size'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm2')
 
-    # lstm2 = LSTM(kwargs['hidden_size'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True)
-    lstm2 = LSTM(kwargs['hidden_size'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'])
+    sequence_input = Input(shape = (kwargs['max_seq_len'] - 1,), dtype = 'int32')
+
+    embedded_sequences = embedding_layer(sequence_input)
+
+    lstm1_op = lstm1(embedded_sequences)
+
+    lstm1_op = Dropout(kwargs['dropout'])(lstm1_op)
+
+    # lstm1_op = BatchNormalization()(lstm1_op)
+
+    lstm2_op = lstm2(lstm1_op)
+
+    lstm2_op = Dropout(kwargs['dropout'])(lstm2_op)
+
+    # lstm2_op = Lambda(lambda x: x[:, -1, :])(lstm2_op)
+
+    # lstm2_op = BatchNormalization()(lstm2_op)
+
+    lm_op = Dense(kwargs['nchars'], activation = 'softmax', name = 'lm_op')(lstm2_op)
+
+    lm = Model(inputs = [sequence_input], outputs = lm_op)
+
+    return lm
+
+def build_clf_model(kwargs):
+
+    embedding_layer = Embedding(kwargs['nchars'], kwargs['hidden_size'], input_length = kwargs['max_seq_len'], mask_zero = True, trainable = True, name = 'embedding_layer')
+
+    lstm1 = LSTM(kwargs['hidden_size'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm1')
+
+    lstm2 = LSTM(kwargs['hidden_size'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm2')
 
     sequence_input = Input(shape = (kwargs['max_seq_len'],), dtype = 'int32')
 
@@ -45,46 +75,63 @@ def build_models(emb_matrix, kwargs):
 
     lstm2_op = Dropout(kwargs['dropout'])(lstm2_op)
 
+    lstm2_op = Lambda(lambda x: x[:, -1, :])(lstm2_op)
+
     # lstm2_op = BatchNormalization()(lstm2_op)
 
-    # TODO: have to figure out how to reshape the output at this point
-
-    lm_op = Dense(nchars, activation = 'softmax')(lstm2_op)
-
-    clf_op = Dense(kwargs['nclasses'], activation = 'softmax')(lstm2_op)
-
-    lm = Model(inputs = [sequence_input], outputs = lm_op)
+    clf_op = Dense(kwargs['nclasses'], activation = 'softmax', name = 'clf_op')(lstm2_op)
 
     clf = Model(inputs = [sequence_input], outputs = clf_op)
 
-    return lm, clf
+    return clf
 
-def train_lm(model, corpus, model_save_dir, n_epochs, hidden_size, n_layers, dropout, learning_rate, batch_size):
+def get_one_hot_encoding(index, nclasses):
 
-    X_train = corpus.get_splits_for_lm()
+    ohvector = np.zeros(nclasses)
+    ohvector[index] = 1
 
-    y_train = []
+    return ohvector
 
-    for x in X_train:
-        y_train.append(x[1:])
+def get_splits(X):
 
-    y_train = np.asarray(y_train)
-    X_train = X_train[:, :-1]
+    y = []
+
+    for x in X:
+        curr_y = x[1:]
+        _y = []
+        for idx in curr_y:
+            _y.append(get_one_hot_encoding(idx, args['nchars']))
+        y.append(np.asarray(_y))
+
+    y = np.asarray(y)
+    X = X[:, :-1]
+
+    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size = 0.1, random_state = 42)
+
+    return X_train, X_val, y_train, y_val
+
+def train_lm(model, corpus, args):
+
+    X = corpus.get_splits_for_lm()
+
+    X_train, X_val, y_train, y_val = get_splits(X)
 
     model.compile(loss = 'categorical_crossentropy',
-                  optimizer = 'nadam')
+            optimizer = 'nadam')
 
     model.summary()
 
-    # early_stopping = EarlyStopping(monitor = 'val_acc', patience = 3)
+    early_stopping = EarlyStopping(monitor = 'val_loss', patience = 3)
 
-    bst_model_path = 'language_model.h5'
+    bst_model_path = os.path.join(args['model_save_dir'], 'language_model.h5')
 
     model_checkpoint = ModelCheckpoint(bst_model_path, save_best_only = True, save_weights_only = True)
 
-    hist = model.fit([X_train], y_train,
-                     epochs = 25, batch_size = 200, shuffle = True,
-                     callbacks = [model_checkpoint])
+    hist = model.fit([X_train], y_train, \
+            validation_data = ([X_val], y_val), \
+            epochs = args['n_epochs'], batch_size = args['batch_size'], shuffle = True, \
+            callbacks = [early_stopping, model_checkpoint])
+
 
 def train_classifier(model, corpus, args):
 
@@ -100,11 +147,11 @@ def train_classifier(model, corpus, args):
             optimizer = 'nadam',
             metrics = ['acc'])
 
-    # model.summary()
+    model.summary()
 
-    early_stopping = EarlyStopping(monitor = 'val_acc', patience = 5)
+    early_stopping = EarlyStopping(monitor = 'val_acc', patience = 3)
 
-    bst_model_path = 'classifier' + '.h5'
+    bst_model_path = os.path.join(args['model_save_dir'], 'classifier_model.h5')
 
     model_checkpoint = ModelCheckpoint(bst_model_path, save_best_only = True, save_weights_only = True)
 
@@ -133,17 +180,25 @@ def get_emb_matrix(corpus, emb_dim = 300):
 def main(args):
 
     corpus = TweetCorpus(args['train_file'], args['val_file'], args['test_file'], args['tweets_file'])
-
     print 'len(vocab): ', len(corpus.char2idx)
-
-    emb_matrix = get_emb_matrix(corpus, emb_dim = args['hidden_size'])
-
     args['max_seq_len'] = corpus.max_len
     args['nclasses'] = len(corpus.label2idx)
+    args['nchars'] = len(corpus.char2idx) + 1
 
-    lm, clf = build_models(emb_matrix, args)
-
-    train_classifier(clf, corpus, args)
+    if args['mode'] == 'lm':
+        print 'Creating language model . . .'
+        lm = build_lm_model(args)
+        print 'Training language model . . .'
+        train_lm(lm, corpus, args)
+    elif args['mode'] == 'clf':
+        print 'Creating classifier model . . .'
+        clf = build_clf_model(args)
+        # if the weights from the lm exists then use those weights instead
+        if os.path.isfile(os.path.join(args['model_save_dir'], 'language_model.h5')):
+            print 'Loading weights from trained language model . . .'
+            clf.load_weights(os.path.join(args['model_save_dir'], 'language_model.h5'), by_name = True)
+        print 'Training classifier model . . .'
+        train_classifier(clf, corpus, args)
 
 if __name__ == '__main__':
 
@@ -154,10 +209,12 @@ if __name__ == '__main__':
     parser.add_argument('test_file', type = str)
     parser.add_argument('tweets_file', type = str)
     parser.add_argument('model_save_dir', type = str)
+    parser.add_argument('mode', type = str)
     parser.add_argument('--n_epochs', type = int, default = 15)
     parser.add_argument('--hidden_size', type = int, default = 128)
     parser.add_argument('--dropout', type = float, default = 0.5)
     parser.add_argument('--learning_rate', type = float, default = 0.01)
+
     parser.add_argument('--batch_size', type = int, default = 32)
 
     args = vars(parser.parse_args())
