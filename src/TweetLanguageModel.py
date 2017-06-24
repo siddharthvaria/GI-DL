@@ -10,7 +10,7 @@ import os
 import numpy as np
 from random import randint
 from TweetReader import TweetCorpus
-from utils import Dataset2
+from Datasets import Dataset2
 from torch.utils.data import DataLoader
 
 # torch.manual_seed(1)
@@ -82,7 +82,7 @@ def fit(lm, data_loader, total_batches):
 
         batches_processed += 1
         # data has dimension: batch_size, seq_len
-        # target had dimension: batch_size
+        # target had dimension: batch_size, seq_len
         lm.train()
 
         lm.decoder_optimizer.zero_grad()
@@ -126,9 +126,11 @@ def generate(lm, corpus, start_letter = 'A'):
 
     return output_name
 
-def main(tweets_file, model_save_dir, n_epochs, hidden_size, n_layers, dropout, learning_rate, batch_size):
+def main(train_file, val_file, test_file, tweets_file, model_save_dir, n_epochs, hidden_size, n_layers, dropout, learning_rate, batch_size):
 
-    corpus = TweetCorpus(unlabeled_tweets_file = tweets_file)
+    # corpus = TweetCorpus(unlabeled_tweets_file = tweets_file)
+
+    corpus = TweetCorpus(train_file, val_file, test_file, tweets_file)
 
     print 'len(vocab): ', len(corpus.char2idx)
 
@@ -159,7 +161,7 @@ def main(tweets_file, model_save_dir, n_epochs, hidden_size, n_layers, dropout, 
 
     lm_loaded = torch.load(os.path.join(model_save_dir, 'language_model.pt'))
 
-    start_letters = ['@', 'r']
+    start_letters = ['f', 'o', 'r', '@', 'i', '_', 'n', 'g']
     for i in range(len(start_letters)):
         op = generate(lm_loaded, corpus, start_letter = start_letters[i])
         print op
@@ -168,6 +170,9 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description = '')
 
+    parser.add_argument('train_file', type = str)
+    parser.add_argument('val_file', type = str)
+    parser.add_argument('test_file', type = str)
     parser.add_argument('tweets_file', type = str)
     parser.add_argument('model_save_dir', type = str)
     parser.add_argument('--n_epochs', type = int, default = 20)
