@@ -227,10 +227,14 @@ def main(args):
     # corpus = TweetCorpus(unlabeled_tweets_file = args['tweets_file'])
     corpus = TweetCorpus(args['train_file'], args['val_file'], args['test_file'], args['tweets_file'])
 
-    print 'len(vocab): ', len(corpus.char2idx) + 1
     args['max_seq_len'] = corpus.max_len
+    print 'max_seq_len: ', args['max_seq_len']
     args['nclasses'] = len(corpus.label2idx)
+    print 'nclasses: ', args['nclasses']
     args['nchars'] = len(corpus.char2idx) + 1
+    print 'nchars: ', args['nchars']
+
+    print 'Tweets length dictionary: ', corpus.len_dict
 
     if args['mode'] == 'lm':
         print 'Creating language model . . .'

@@ -25,6 +25,7 @@ class TweetCorpus:
     def __init__(self, train_file = None, val_file = None, test_file = None, unlabeled_tweets_file = None):
 
         self.max_len = 0
+        self.len_dict = None
 
         self.aggress = set(['aggress', 'insult', 'snitch', 'threat', 'brag', 'aod', 'aware', 'authority', 'trust', 'fight', 'pride', 'power', 'lyric'])
         self.loss = set(['loss', 'grief', 'death', 'sad', 'alone', 'reac', 'guns'])
@@ -34,6 +35,7 @@ class TweetCorpus:
         self.val_tweets = self.read_tweets(val_file, 'CONTENT', ',')
         self.test_tweets = self.read_tweets(test_file, 'CONTENT', ',')
         self.unlabeled_tweets = self.read_tweets(unlabeled_tweets_file, 'text', '\t')
+
 
         self.char2idx = None
         self.idx2char = None
@@ -102,6 +104,8 @@ class TweetCorpus:
 
         self.char2idx = defaultdict(int)
 
+        self.len_dict = defaultdict(int)
+
         self._update_char2idx(self.train_tweets, 'CONTENT')
         self._update_char2idx(self.val_tweets, 'CONTENT')
         self._update_char2idx(self.test_tweets, 'CONTENT')
@@ -117,6 +121,7 @@ class TweetCorpus:
         for tweet in tweets:
             if column_name in tweet:
                 content = tweet[column_name]
+                self.len_dict[len(content)] += 1
                 self.max_len = max(self.max_len, len(content))
                 for char in content:
                     if char not in self.char2idx:
