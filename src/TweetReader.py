@@ -1,6 +1,7 @@
 import codecs
 import sys
 import math
+import re
 import numpy as np
 from utils import unicode_csv_reader2
 from collections import defaultdict
@@ -74,7 +75,13 @@ class TweetCorpus:
 
                 if row[column_name] in (None, ''): continue
 
-                row[column_name] = row[column_name].strip()
+                # preprocess the tweet
+                content = self.preprocess_tweet(row[column_name])
+                # put a hard cutoff of 150 characters
+                if len(content) > 150:
+                    continue
+
+                row[column_name] = content
 
                 if column_name == 'CONTENT':
                     if 'LABEL' in row.keys():
@@ -99,6 +106,17 @@ class TweetCorpus:
                         _tmp.append('')
                 fh.write(','.join(_tmp))
                 fh.write('\n')
+
+    def preprocess_tweet(self, text):
+
+        # get rid of continuous underlines in the tweet
+        text = re.sub(r"_", "", text)
+        # get rid of <a href=""> html tags
+        text = re.sub(r"<a.*?>", "", text)
+        # get rid of urls
+        text = re.sub(r"http\S+", "", text)
+
+        return text.strip()
 
     def init_char_dictionaries(self):
 
