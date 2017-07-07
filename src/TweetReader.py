@@ -6,6 +6,7 @@ import numpy as np
 from utils import unicode_csv_reader2
 from collections import defaultdict
 from sklearn.model_selection import StratifiedShuffleSplit
+from preprocess import preprocess
 
 class TweetCorpus:
     '''Simple corpus reader.'''
@@ -36,7 +37,6 @@ class TweetCorpus:
         self.val_tweets = self.read_tweets(val_file, 'CONTENT', ',')
         self.test_tweets = self.read_tweets(test_file, 'CONTENT', ',')
         self.unlabeled_tweets = self.read_tweets(unlabeled_tweets_file, 'text', '\t')
-
 
         self.char2idx = None
         self.idx2char = None
@@ -76,12 +76,11 @@ class TweetCorpus:
                 if row[column_name] in (None, ''): continue
 
                 # preprocess the tweet
-                content = self.preprocess_tweet(row[column_name])
-                # put a hard cutoff of 150 characters
-                if len(content) > 150:
-                    continue
+                row[column_name] = preprocess(row[column_name])
 
-                row[column_name] = content
+                # put a hard cutoff of 150 characters
+                if len(row[column_name]) > 150:
+                    continue
 
                 if column_name == 'CONTENT':
                     if 'LABEL' in row.keys():
@@ -94,7 +93,7 @@ class TweetCorpus:
 
     def write_tweets(self, file_name, tweets, columns):
 
-        with codecs.open(file_name, "w", "utf-8") as fh:
+        with codecs.open(file_name, 'w', 'utf-8') as fh:
             fh.write(','.join(columns))
             fh.write('\n')
             for tweet in tweets:
@@ -107,16 +106,16 @@ class TweetCorpus:
                 fh.write(','.join(_tmp))
                 fh.write('\n')
 
-    def preprocess_tweet(self, text):
-
-        # get rid of continuous underlines in the tweet
-        text = re.sub(r"_", "", text)
-        # get rid of <a href=""> html tags
-        text = re.sub(r"<a.*?>", "", text)
-        # get rid of urls
-        text = re.sub(r"http\S+", "", text)
-
-        return text.strip()
+#     def preprocess_tweet(self, text):
+#
+#         # get rid of continuous underlines in the tweet
+#         text = re.sub(r"_", "", text)
+#         # get rid of <a href=""> html tags
+#         text = re.sub(r"<a.*?>", "", text)
+#         # get rid of urls
+#         text = re.sub(r"http\S+", "", text)
+#
+#         return text.strip()
 
     def init_char_dictionaries(self):
 
@@ -215,13 +214,33 @@ class TweetCorpus:
 
         return X_train, X_val, X_test, y_train, y_val, y_test
 
-    def get_splits_for_lm(self):
+    def get_splits_for_lm1(self):
 
         X = []
 
         if self.unlabeled_tweets is not None:
             for tweet in self.unlabeled_tweets:
                 X.append(self.tweet2Indices(tweet, 'text'))
+
+        X = np.asarray(X)
+
+        return X
+
+    def get_splits_for_lm2(self):
+
+        X = []
+
+        if self.train_tweets is not None:
+            for tweet in self.train_tweets:
+                X.append(self.tweet2Indices(tweet, 'CONTENT'))
+
+        if self.val_tweets is not None:
+            for tweet in self.val_tweets:
+                X.append(self.tweet2Indices(tweet, 'CONTENT'))
+
+        if self.test_tweets is not None:
+            for tweet in self.test_tweets:
+                X.append(self.tweet2Indices(tweet, 'CONTENT'))
 
         X = np.asarray(X)
 
