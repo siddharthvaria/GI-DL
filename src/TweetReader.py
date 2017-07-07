@@ -36,7 +36,7 @@ class TweetCorpus:
         self.train_tweets = self.read_tweets(train_file, 'CONTENT', ',')
         self.val_tweets = self.read_tweets(val_file, 'CONTENT', ',')
         self.test_tweets = self.read_tweets(test_file, 'CONTENT', ',')
-        self.unlabeled_tweets = self.read_tweets(unlabeled_tweets_file, 'text', '\t')
+        self.unlabeled_tweets = self.read_tweets(unlabeled_tweets_file, 'text', ',')
 
         self.char2idx = None
         self.idx2char = None
@@ -76,7 +76,7 @@ class TweetCorpus:
                 if row[column_name] in (None, ''): continue
 
                 # preprocess the tweet
-                row[column_name] = preprocess(row[column_name])
+                # row[column_name] = preprocess(row[column_name])
 
                 # put a hard cutoff of 150 characters
                 if len(row[column_name]) > 150:

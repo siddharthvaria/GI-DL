@@ -128,7 +128,7 @@ def get_splits(X):
 
 def train_lm(model, corpus, args):
 
-    X = corpus.get_splits_for_lm()
+    X = corpus.get_splits_for_lm1()
 
     X_train, X_val, y_train, y_val = get_splits(X)
 
