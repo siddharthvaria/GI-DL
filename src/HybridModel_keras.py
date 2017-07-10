@@ -9,13 +9,14 @@ from keras import optimizers
 from keras.utils import np_utils
 from sklearn.model_selection import train_test_split
 # from keras import backend as K
-from TweetReader1 import TweetCorpus
+from TweetReader2 import TweetCorpus
 from sklearn.metrics import classification_report
 
 import numpy as np
 import argparse
 import os
 import sys
+import math
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -85,52 +86,48 @@ def build_clf_model(kwargs):
 
     return clf
 
-def get_one_hot_encoding(index, nclasses):
+# def get_one_hot_encoding(index, nclasses):
+#
+#     ohvector = np.zeros(nclasses)
+#     ohvector[index] = 1
+#
+#     return ohvector
 
-    ohvector = np.zeros(nclasses)
-    ohvector[index] = 1
+# def to_categorical(X):
+#
+#     y = []
+#
+#     for x in X:
+#         curr_y = x[1:]
+#         _y = []
+#         for idx in curr_y:
+#             _y.append(get_one_hot_encoding(idx, args['nchars']))
+#         y.append(np.asarray(_y))
+#
+#     y = np.asarray(y)
+#
+#     return y
 
-    return ohvector
-
-def to_categorical(X):
-
-    y = []
-
-    for x in X:
-        curr_y = x[1:]
-        _y = []
-        for idx in curr_y:
-            _y.append(get_one_hot_encoding(idx, args['nchars']))
-        y.append(np.asarray(_y))
-
-    y = np.asarray(y)
-
-    return y
-
-def get_splits(X):
-
-    y = np.zeros(len(X))
-
-    X_train, X_val, _, _ = train_test_split(X, y, test_size = 0.1, random_state = 42)
-
-    y_train = to_categorical(X_train)
-
-    y_val = to_categorical(X_val)
-
-    X_train = X_train[:, :-1]
-
-    X_val = X_val[:, :-1]
-
-    print X_train.shape
-    print y_train.shape
-
-    return X_train, X_val, y_train, y_val
+# def get_splits(X):
+#
+#     y = np.zeros(len(X))
+#
+#     X_train, X_val, _, _ = train_test_split(X, y, test_size = 0.1, random_state = 42)
+#
+#     y_train = to_categorical(X_train)
+#
+#     y_val = to_categorical(X_val)
+#
+#     X_train = X_train[:, :-1]
+#
+#     X_val = X_val[:, :-1]
+#
+#     print X_train.shape
+#     print y_train.shape
+#
+#     return X_train, X_val, y_train, y_val
 
 def train_lm(model, corpus, args):
-
-    X = corpus.get_splits_for_lm1()
-
-    X_train, X_val, y_train, y_val = get_splits(X)
 
     opt = optimizers.Nadam()
 
@@ -145,20 +142,23 @@ def train_lm(model, corpus, args):
 
     model_checkpoint = ModelCheckpoint(bst_model_path, save_best_only = True, save_weights_only = True)
 
-    hist = model.fit([X_train], y_train, \
-            validation_data = ([X_val], y_val), \
-            epochs = 15, batch_size = args['batch_size'], shuffle = True, \
-            callbacks = [early_stopping, model_checkpoint])
+    model.fit_generator(corpus.unld_tr_data.get_mini_batch(args['batch_size']),
+                        int(math.floor(corpus.unld_tr_data.wc / args['batch_size'])),
+                        epochs = 15,
+                        callbacks = [early_stopping, model_checkpoint],
+                        validation_data = corpus.unld_val_data.get_mini_batch(args['batch_size']),
+                        validation_steps = int(math.floor(corpus.unld_val_data.wc / args['batch_size'])))
+
 
 def train_classifier(model, corpus, args):
 
-    X_train, X_val, X_test, y_train, y_val, y_test = corpus.get_splits()
+    X_train, X_val, X_test, y_train, y_val, y_test = corpus.get_data_for_classification()
 
-    y_train = np_utils.to_categorical(y_train, num_classes = len(corpus.label2idx))
-
-    y_val = np_utils.to_categorical(y_val, num_classes = len(corpus.label2idx))
-
-    y_test = np_utils.to_categorical(y_test, num_classes = len(corpus.label2idx))
+#     y_train = np_utils.to_categorical(y_train, num_classes = len(corpus.label2idx))
+#
+#     y_val = np_utils.to_categorical(y_val, num_classes = len(corpus.label2idx))
+#
+#     y_test = np_utils.to_categorical(y_test, num_classes = len(corpus.label2idx))
 
     opt = optimizers.Nadam()
 
@@ -225,7 +225,8 @@ def generate_samples(model, corpus, num_samples):
 def main(args):
 
     # corpus = TweetCorpus(unlabeled_tweets_file = args['tweets_file'])
-    corpus = TweetCorpus(args['train_file'], args['val_file'], args['test_file'], args['tweets_file'])
+    # corpus = TweetCorpus(args['train_file'], args['val_file'], args['test_file'], args['tweets_file'])
+    corpus = TweetCorpus(args['train_file'], args['val_file'], args['test_file'], args['unld_train_file'], args['unld_val_file'], args['dictionaries_file'])
 
     args['max_seq_len'] = corpus.max_len
     print 'max_seq_len: ', args['max_seq_len']
@@ -233,8 +234,6 @@ def main(args):
     print 'nclasses: ', args['nclasses']
     args['nchars'] = len(corpus.char2idx) + 1
     print 'nchars: ', args['nchars']
-
-    print 'Tweets length dictionary: ', corpus.len_dict
 
     if args['mode'] == 'lm':
         print 'Creating language model . . .'
@@ -268,7 +267,9 @@ if __name__ == '__main__':
     parser.add_argument('train_file', type = str)
     parser.add_argument('val_file', type = str)
     parser.add_argument('test_file', type = str)
-    parser.add_argument('tweets_file', type = str)
+    parser.add_argument('unld_train_file', type = str)
+    parser.add_argument('unld_val_file', type = str)
+    parser.add_argument('dictionaries_file', type = str)
     parser.add_argument('model_save_dir', type = str)
     parser.add_argument('mode', type = str)
     parser.add_argument('--n_epochs', type = int, default = 50)
