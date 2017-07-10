@@ -9,7 +9,7 @@ from keras import optimizers
 from keras.utils import np_utils
 from sklearn.model_selection import train_test_split
 # from keras import backend as K
-from TweetReader import TweetCorpus
+from TweetReader1 import TweetCorpus
 from sklearn.metrics import classification_report
 
 import numpy as np

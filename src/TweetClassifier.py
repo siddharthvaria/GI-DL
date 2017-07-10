@@ -9,7 +9,7 @@ import math
 import os
 import cPickle
 import numpy as np
-from TweetReader import TweetCorpus
+from TweetReader1 import TweetCorpus
 from Datasets import Dataset1
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt

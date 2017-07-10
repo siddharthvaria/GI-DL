@@ -8,7 +8,7 @@ import time
 import math
 import os
 import numpy as np
-from TweetReader import TweetCorpus
+from TweetReader1 import TweetCorpus
 from Datasets import Dataset1, Dataset2
 from torch.utils.data import DataLoader
 from sklearn.metrics import confusion_matrix
