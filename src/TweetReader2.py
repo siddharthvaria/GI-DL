@@ -58,13 +58,9 @@ class Generator:
 
     def get_mini_batch(self, batch_size):
         # mini-batch generator
-        # Currently this method will miss the last few examples that do not make up the minibatch i.e last (wc % batch_size) examples
-        # epoch = 0
-        # while epoch < nepochs:
+        X = []
+        y = []
         while True:
-            # print 'epoch: ', epoch
-            X = []
-            y = []
             done = False
             with open(self.data_file) as fh:
                 for line in fh:
@@ -74,28 +70,43 @@ class Generator:
                     if len(X) == batch_size:
                         done = True
                         X = np.asarray(X)
-                        # print X.shape
                         y = np.asarray(y)
-                        # print y.shape
                         yield (X, y)
                     if done:
                         done = False
                         X = []
                         y = []
-            # epoch += 1
+
+    def get_example(self):
+        # mini-batch generator
+        # Currently this method will miss the last few examples that do not make up the minibatch i.e last (wc % batch_size) examples
+        while True:
+            with open(self.data_file) as fh:
+                for line in fh:
+                    X_c, y_c = parse_line(line, self.mode, self.max_len, self.nclasses)
+                    yield (np.asarray([X_c]), np.asarray([y_c]))
+
 
 class TweetCorpus:
 
     def __init__(self, train_file = None, val_file = None, test_file = None, unld_train_file = None, unld_val_file = None, dictionaries_file = None):
 
-
         self.char2idx, self.label2idx, self.max_len = pickle.load(open(dictionaries_file, "rb"))
+
+        self.idx2char = {v:k for k, v in self.char2idx.iteritems()}
+        self.idx2char[0] = ''
 
         self.tr_data = Corpus(train_file, 'clf', self.max_len, len(self.label2idx))
         self.val_data = Corpus(val_file, 'clf', self.max_len, len(self.label2idx))
         self.te_data = Corpus(test_file, 'clf', self.max_len, len(self.label2idx))
         self.unld_tr_data = Generator(unld_train_file, 'lm', self.max_len, len(self.char2idx) + 1)
         self.unld_val_data = Generator(unld_val_file, 'lm', self.max_len, len(self.char2idx) + 1)
+#         self.unld_tr_data = Corpus(unld_train_file, 'lm', self.max_len, len(self.char2idx) + 1)
+#         self.unld_val_data = Corpus(unld_val_file, 'lm', self.max_len, len(self.char2idx) + 1)
 
     def get_data_for_classification(self):
         return self.tr_data.X, self.val_data.X, self.te_data.X, self.tr_data.y, self.val_data.y, self.te_data.y
+
+    def get_data_for_lm(self):
+        return self.unld_tr_data.X, self.unld_val_data.X, self.unld_tr_data.y, self.unld_val_data.y
+

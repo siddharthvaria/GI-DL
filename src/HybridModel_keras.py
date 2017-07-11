@@ -86,48 +86,7 @@ def build_clf_model(kwargs):
 
     return clf
 
-# def get_one_hot_encoding(index, nclasses):
-#
-#     ohvector = np.zeros(nclasses)
-#     ohvector[index] = 1
-#
-#     return ohvector
-
-# def to_categorical(X):
-#
-#     y = []
-#
-#     for x in X:
-#         curr_y = x[1:]
-#         _y = []
-#         for idx in curr_y:
-#             _y.append(get_one_hot_encoding(idx, args['nchars']))
-#         y.append(np.asarray(_y))
-#
-#     y = np.asarray(y)
-#
-#     return y
-
-# def get_splits(X):
-#
-#     y = np.zeros(len(X))
-#
-#     X_train, X_val, _, _ = train_test_split(X, y, test_size = 0.1, random_state = 42)
-#
-#     y_train = to_categorical(X_train)
-#
-#     y_val = to_categorical(X_val)
-#
-#     X_train = X_train[:, :-1]
-#
-#     X_val = X_val[:, :-1]
-#
-#     print X_train.shape
-#     print y_train.shape
-#
-#     return X_train, X_val, y_train, y_val
-
-def train_lm(model, corpus, args):
+def train_lm_streaming(model, corpus, args):
 
     opt = optimizers.Nadam()
 
@@ -145,10 +104,32 @@ def train_lm(model, corpus, args):
     model.fit_generator(corpus.unld_tr_data.get_mini_batch(args['batch_size']),
                         int(math.floor(corpus.unld_tr_data.wc / args['batch_size'])),
                         epochs = 15,
+                        verbose = 1,
                         callbacks = [early_stopping, model_checkpoint],
                         validation_data = corpus.unld_val_data.get_mini_batch(args['batch_size']),
                         validation_steps = int(math.floor(corpus.unld_val_data.wc / args['batch_size'])))
 
+def train_lm(model, corpus, args):
+
+    X_train, X_val, y_train, y_val = corpus.get_data_for_lm()
+
+    opt = optimizers.Nadam()
+
+    model.compile(loss = 'categorical_crossentropy',
+            optimizer = opt)
+
+    model.summary()
+
+    early_stopping = EarlyStopping(monitor = 'val_loss', patience = 3)
+
+    bst_model_path = os.path.join(args['model_save_dir'], 'language_model.h5')
+
+    model_checkpoint = ModelCheckpoint(bst_model_path, save_best_only = True, save_weights_only = True)
+
+    hist = model.fit([X_train], y_train, \
+            validation_data = ([X_val], y_val), \
+            epochs = 15, batch_size = args['batch_size'], shuffle = True, \
+            callbacks = [early_stopping, model_checkpoint])
 
 def train_classifier(model, corpus, args):
 
@@ -189,7 +170,7 @@ def train_classifier(model, corpus, args):
 
 def generate_samples(model, corpus, num_samples):
 
-    start_chars = ['f', 'o', 'r', '@', 'i', '_', 'n', 'g']
+    start_chars = ['f', 'o', 'rt ', '@', 'i', '_', 'n', 'g']
     # start_chars = ['G', 'E', 'R', 'C', 'H', 'I']
     # all_samples = []
 
@@ -211,7 +192,6 @@ def generate_samples(model, corpus, num_samples):
         print(''.join([corpus.idx2char[idx] for idx in curr_sample]))
 
     print '##############################################'
-
 
 # def get_emb_matrix(corpus, emb_dim = 300):
 #
@@ -239,7 +219,8 @@ def main(args):
         print 'Creating language model . . .'
         lm = build_lm_model(args)
         print 'Training language model . . .'
-        train_lm(lm, corpus, args)
+        # train_lm(lm, corpus, args)
+        train_lm_streaming(lm, corpus, args)
         if os.path.isfile(os.path.join(args['model_save_dir'], 'language_model.h5')):
             print 'Loading weights from trained language model for text generation . . .'
             lm.load_weights(os.path.join(args['model_save_dir'], 'language_model.h5'), by_name = True)
