@@ -168,30 +168,39 @@ def train_classifier(model, corpus, args):
 
     print(classification_report(np.argmax(y_test, axis = 1), np.argmax(preds, axis = 1), target_names = corpus.get_class_names()))
 
-def generate_samples(model, corpus, num_samples):
+def sample(preds, temperature = 1.0):
+    # helper function to sample an index from a probability array
+    preds = np.asarray(preds).astype('float64')
+    preds = np.log(preds) / temperature
+    exp_preds = np.exp(preds)
+    preds = exp_preds / np.sum(exp_preds)
+    probas = np.random.multinomial(1, preds, 1)
+    return np.argmax(probas)
 
-    start_chars = ['f', 'o', 'rt ', '@', 'i', '_', 'n', 'g']
-    # start_chars = ['G', 'E', 'R', 'C', 'H', 'I']
-    # all_samples = []
+def generate_text(model, corpus):
 
-    print '##############################################'
+    start_seqs = ['if u Lookin ', 'RT ', 'I Dnt Carry ', '@younggodumb: ', 'Pockets heavy ', 'I Jst Got ']
 
-    for _ in xrange(num_samples):
+    for diversity in [0.2, 0.5, 1.0, 1.2]:
 
-        start_char = start_chars[np.random.randint(0, len(start_chars) - 1)]
-        start_char_idx = corpus.char2idx[start_char]
-        curr_sample = [start_char_idx]
+        print '##############################################'
 
-        for _ in xrange(np.random.randint(50, 140)):
-            seq_in = np.asarray([0 for _ in xrange(args['max_seq_len'] - 1 - len(curr_sample))] + curr_sample)
-            inp = np.asarray([seq_in])
-            prediction = model.predict(inp, verbose = 0)
-            index = np.argmax(prediction[0][-1])
-            curr_sample.append(index)
+        for ii in xrange(len(start_seqs)):
 
-        print(''.join([corpus.idx2char[idx] for idx in curr_sample]))
+            start_seq = start_seqs[ii]
+            curr_sample = [corpus.char2idx[ch] for ch in start_seq]
 
-    print '##############################################'
+            for _ in xrange(np.random.randint(80, 120)):
+                seq_in = np.asarray([0 for _ in xrange(args['max_seq_len'] - 1 - len(curr_sample))] + curr_sample)
+                inp = np.asarray([seq_in])
+                prediction = model.predict(inp, verbose = 0)
+                index = sample(prediction[0][-1], diversity)
+                # index = np.argmax(prediction[0][-1])
+                curr_sample.append(index)
+
+            print(''.join([corpus.idx2char[idx] for idx in curr_sample]))
+
+        print '##############################################'
 
 # def get_emb_matrix(corpus, emb_dim = 300):
 #
@@ -220,7 +229,7 @@ def main(args):
         lm = build_lm_model(args)
         print 'Training language model . . .'
         # train_lm(lm, corpus, args)
-        train_lm_streaming(lm, corpus, args)
+        # train_lm_streaming(lm, corpus, args)
         if os.path.isfile(os.path.join(args['model_save_dir'], 'language_model.h5')):
             print 'Loading weights from trained language model for text generation . . .'
             lm.load_weights(os.path.join(args['model_save_dir'], 'language_model.h5'), by_name = True)
@@ -229,7 +238,7 @@ def main(args):
             sys.exit(0)
 
         print 'Generating some fresh text . . .'
-        generate_samples(lm, corpus, 20)
+        generate_text(lm, corpus)
 
     elif args['mode'] == 'clf':
         print 'Creating classifier model . . .'

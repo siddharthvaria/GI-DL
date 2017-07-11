@@ -110,3 +110,11 @@ class TweetCorpus:
     def get_data_for_lm(self):
         return self.unld_tr_data.X, self.unld_val_data.X, self.unld_tr_data.y, self.unld_val_data.y
 
+    def get_class_names(self):
+
+        class_names = []
+        idx2label = {v:k for k, v in self.label2idx.iteritems()}
+        for idx in xrange(len(idx2label)):
+            class_names.append(idx2label[idx])
+
+        return class_names
