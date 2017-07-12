@@ -104,7 +104,7 @@ def train_lm_streaming(model, corpus, args):
     model.fit_generator(corpus.unld_tr_data.get_mini_batch(args['batch_size']),
                         int(math.floor(corpus.unld_tr_data.wc / args['batch_size'])),
                         epochs = 15,
-                        verbose = 1,
+                        verbose = 2,
                         callbacks = [early_stopping, model_checkpoint],
                         validation_data = corpus.unld_val_data.get_mini_batch(args['batch_size']),
                         validation_steps = int(math.floor(corpus.unld_val_data.wc / args['batch_size'])))
@@ -128,7 +128,7 @@ def train_lm(model, corpus, args):
 
     hist = model.fit([X_train], y_train, \
             validation_data = ([X_val], y_val), \
-            epochs = 15, batch_size = args['batch_size'], shuffle = True, \
+            epochs = 15, verbose = 2, batch_size = args['batch_size'], shuffle = True, \
             callbacks = [early_stopping, model_checkpoint])
 
 def train_classifier(model, corpus, args):
@@ -157,7 +157,7 @@ def train_classifier(model, corpus, args):
 
     hist = model.fit([X_train], y_train, \
             validation_data = ([X_val], y_val), \
-            epochs = args['n_epochs'], batch_size = args['batch_size'], shuffle = True, \
+            epochs = args['n_epochs'], verbose = 2, batch_size = args['batch_size'], shuffle = True, \
             callbacks = [early_stopping, model_checkpoint])
 
     model.load_weights(bst_model_path)
@@ -229,7 +229,7 @@ def main(args):
         lm = build_lm_model(args)
         print 'Training language model . . .'
         # train_lm(lm, corpus, args)
-        # train_lm_streaming(lm, corpus, args)
+        train_lm_streaming(lm, corpus, args)
         if os.path.isfile(os.path.join(args['model_save_dir'], 'language_model.h5')):
             print 'Loading weights from trained language model for text generation . . .'
             lm.load_weights(os.path.join(args['model_save_dir'], 'language_model.h5'), by_name = True)
@@ -237,8 +237,8 @@ def main(args):
             print 'No trained language model available . . .!'
             sys.exit(0)
 
-        print 'Generating some fresh text . . .'
-        generate_text(lm, corpus)
+        # print 'Generating some fresh text . . .'
+        # generate_text(lm, corpus)
 
     elif args['mode'] == 'clf':
         print 'Creating classifier model . . .'
