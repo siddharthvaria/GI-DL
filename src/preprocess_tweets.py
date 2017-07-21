@@ -7,6 +7,7 @@ import cPickle as pickle
 import datetime
 import numpy as np
 from random import randint
+from preprocess import preprocess
 
 aggress = set(['aggress', 'insult', 'snitch', 'threat', 'brag', 'aod', 'aware', 'authority', 'trust', 'fight', 'pride', 'power', 'lyric'])
 loss = set(['loss', 'grief', 'death', 'sad', 'alone', 'reac', 'guns'])
@@ -26,9 +27,10 @@ def collapse_label(fine_grained):
         if a in fine_grained: return 'aggress'
     for l in loss:
         if l in fine_grained: return 'loss'
-    else: return 'other'
 
-def parse_line(line, text_column, label_column, max_len):
+    return 'other'
+
+def parse_line(line, text_column, label_column, max_len, normalize = False):
 
     # take line (dict) as input and return text along with label if label is present
     if line[text_column] in (None, ''):
@@ -37,9 +39,13 @@ def parse_line(line, text_column, label_column, max_len):
     if len(line[text_column]) > max_len:
         return None, None
 
+    if normalize:
+        line[text_column] = preprocess(line[text_column])
+
     X_c = line[text_column]
     if label_column in line.keys():
         y_c = collapse_label(line[label_column])
+        # y_c = line[label_column])
     else:
         y_c = None
 
@@ -62,10 +68,10 @@ class TweetPreprocessor:
         file_str.write(y_id)
         return file_str.getvalue()
 
-    def read_data(self, output_files_dir, data_file, parser, text_column, label_column):
+    def read_data(self, output_files_dir, data_file, parser, text_column, label_column, normalize = False):
 
         if data_file is None:
-            return None
+            return
 
         _, fname = os.path.split(data_file)
         dot_index = fname.rindex('.')
@@ -79,7 +85,7 @@ class TweetPreprocessor:
             reader = unicode_csv_reader2(fhr, delimiter = delimiter)
             for row in reader:
                 line_count += 1
-                X_c, y_c = parser(row, text_column, label_column, self.max_len)
+                X_c, y_c = parser(row, text_column, label_column, self.max_len, normalize = normalize)
                 if X_c is None:
                     continue
                 X_ids = self.update_char2idx(X_c)
@@ -119,6 +125,9 @@ class TweetPreprocessor:
 
     def split_unlabeled_data(self, output_files_dir, data_file, split_ratio = 0.2):
 
+        if data_file is None:
+            return
+
         _, fname = os.path.split(data_file)
         dot_index = fname.rindex('.')
         fname_wo_ext = fname[:dot_index]
@@ -146,12 +155,17 @@ class TweetPreprocessor:
 
 def main(args):
 
+    print 'Normalize Tweets: ', args['normalize']
     time_stamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     tweet_preprocessor = TweetPreprocessor(time_stamp, max_len = 150)
-    tweet_preprocessor.read_data(args['output_file_dir'], args['train_file'], parse_line, 'CONTENT', 'LABEL')
-    tweet_preprocessor.read_data(args['output_file_dir'], args['val_file'], parse_line, 'CONTENT', 'LABEL')
-    tweet_preprocessor.read_data(args['output_file_dir'], args['test_file'], parse_line, 'CONTENT', 'LABEL')
-    tweet_preprocessor.read_data(args['output_file_dir'], args['tweets_file'], parse_line, 'text', '')
+    print 'Processing training set . . .'
+    tweet_preprocessor.read_data(args['output_file_dir'], args['train_file'], parse_line, 'CONTENT', 'LABEL', normalize = args['normalize'])
+    print 'Processing validation set . . .'
+    tweet_preprocessor.read_data(args['output_file_dir'], args['val_file'], parse_line, 'CONTENT', 'LABEL', normalize = args['normalize'])
+    print 'Processing test set . . .'
+    tweet_preprocessor.read_data(args['output_file_dir'], args['test_file'], parse_line, 'CONTENT', 'LABEL', normalize = args['normalize'])
+    print 'Processing unlabeled set . . .'
+    tweet_preprocessor.read_data(args['output_file_dir'], args['tweets_file'], parse_line, 'text', '', normalize = args['normalize'])
     tweet_preprocessor.print_stats()
     tweet_preprocessor.split_unlabeled_data(args['output_file_dir'], args['tweets_file'], split_ratio = 0.2)
     pickle.dump([tweet_preprocessor.char2idx, tweet_preprocessor.label2idx, tweet_preprocessor.max_len], open(os.path.join(args['output_file_dir'], 'dictionaries_' + time_stamp + '.p'), "wb"))
@@ -162,7 +176,8 @@ if __name__ == '__main__':
     parser.add_argument('train_file', type = str)
     parser.add_argument('val_file', type = str)
     parser.add_argument('test_file', type = str)
-    parser.add_argument('tweets_file', type = str)
+    parser.add_argument('--tweets_file', type = str, default = None)
+    parser.add_argument('--normalize', type = bool, default = False)
     parser.add_argument('output_file_dir', type = str)
 
     args = vars(parser.parse_args())

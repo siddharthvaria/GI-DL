@@ -1,12 +1,40 @@
 import codecs
-import sys
+import csv
 import math
-import re
 import numpy as np
 from utils import unicode_csv_reader2
 from collections import defaultdict
 from sklearn.model_selection import StratifiedShuffleSplit
-from preprocess import preprocess
+import cStringIO
+
+class UnicodeWriter:
+    """
+    A CSV writer which will write rows to CSV file "f",
+    which is encoded in the given encoding.
+    """
+
+    def __init__(self, f, dialect = csv.excel, encoding = "utf-8", **kwds):
+        # Redirect output to a queue
+        self.queue = cStringIO.StringIO()
+        self.writer = csv.writer(self.queue, dialect = dialect, **kwds)
+        self.stream = f
+        self.encoder = codecs.getincrementalencoder(encoding)()
+
+    def writerow(self, row):
+        self.writer.writerow([s.encode("utf-8") for s in row])
+        # Fetch UTF-8 output from the queue ...
+        data = self.queue.getvalue()
+        data = data.decode("utf-8")
+        # ... and reencode it into the target encoding
+        data = self.encoder.encode(data)
+        # write to the target stream
+        self.stream.write(data)
+        # empty queue
+        self.queue.truncate(0)
+
+    def writerows(self, rows):
+        for row in rows:
+            self.writerow(row)
 
 class TweetCorpus:
     '''Simple corpus reader.'''
@@ -71,8 +99,6 @@ class TweetCorpus:
 
                 line_count += 1
 
-                # print line_count
-
                 if row[column_name] in (None, ''): continue
 
                 # preprocess the tweet
@@ -93,18 +119,19 @@ class TweetCorpus:
 
     def write_tweets(self, file_name, tweets, columns):
 
-        with codecs.open(file_name, 'w', 'utf-8') as fh:
-            fh.write(','.join(columns))
-            fh.write('\n')
-            for tweet in tweets:
-                _tmp = []
-                for column in columns:
-                    if column in tweet:
-                        _tmp.append(tweet[column])
-                    else:
-                        _tmp.append('')
-                fh.write(','.join(_tmp))
-                fh.write('\n')
+        if file_name is None or tweets is None:
+            return None
+
+        unicode_writer = UnicodeWriter(open(file_name, 'w'))
+        unicode_writer.writerow(columns)
+        for tweet in tweets:
+            _tmp = []
+            for column in columns:
+                if column in tweet:
+                    _tmp.append(tweet[column])
+                else:
+                    _tmp.append('')
+            unicode_writer.writerow(_tmp)
 
 #     def preprocess_tweet(self, text):
 #

@@ -34,9 +34,6 @@ class Corpus:
 
     def read_data(self, data_file, mode, max_len, nclasses):
 
-        if data_file is None:
-            return None
-
         with open(data_file, 'r') as fh:
             for line in fh:
                 X_c, y_c = parse_line(line, mode, max_len, nclasses)
@@ -57,6 +54,7 @@ class Generator:
         print 'Number of lines in %s: %d' % (self.data_file, self.wc)
 
     def get_mini_batch(self, batch_size):
+
         # mini-batch generator
         X = []
         y = []
@@ -79,7 +77,6 @@ class Generator:
 
     def get_example(self):
         # mini-batch generator
-        # Currently this method will miss the last few examples that do not make up the minibatch i.e last (wc % batch_size) examples
         while True:
             with open(self.data_file) as fh:
                 for line in fh:
@@ -96,11 +93,31 @@ class TweetCorpus:
         self.idx2char = {v:k for k, v in self.char2idx.iteritems()}
         self.idx2char[0] = ''
 
-        self.tr_data = Corpus(train_file, 'clf', self.max_len, len(self.label2idx))
-        self.val_data = Corpus(val_file, 'clf', self.max_len, len(self.label2idx))
-        self.te_data = Corpus(test_file, 'clf', self.max_len, len(self.label2idx))
-        self.unld_tr_data = Generator(unld_train_file, 'lm', self.max_len, len(self.char2idx) + 1)
-        self.unld_val_data = Generator(unld_val_file, 'lm', self.max_len, len(self.char2idx) + 1)
+        if train_file is None:
+            self.tr_data = None
+        else:
+            self.tr_data = Corpus(train_file, 'clf', self.max_len, len(self.label2idx))
+
+        if val_file is None:
+            self.val_data = None
+        else:
+            self.val_data = Corpus(val_file, 'clf', self.max_len, len(self.label2idx))
+
+        if test_file is None:
+            self.te_data = None
+        else:
+            self.te_data = Corpus(test_file, 'clf', self.max_len, len(self.label2idx))
+
+        if unld_train_file is None:
+            self.unld_tr_data = None
+        else:
+            self.unld_tr_data = Generator(unld_train_file, 'lm', self.max_len, len(self.char2idx) + 1)
+
+        if unld_val_file is None:
+            self.unld_val_data = None
+        else:
+            self.unld_val_data = Generator(unld_val_file, 'lm', self.max_len, len(self.char2idx) + 1)
+
 #         self.unld_tr_data = Corpus(unld_train_file, 'lm', self.max_len, len(self.char2idx) + 1)
 #         self.unld_val_data = Corpus(unld_val_file, 'lm', self.max_len, len(self.char2idx) + 1)
 

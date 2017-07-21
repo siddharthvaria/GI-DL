@@ -15,22 +15,21 @@ from sklearn.metrics import classification_report
 import numpy as np
 import argparse
 import os
-import sys
 import math
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 def build_lm_model(kwargs):
 
-    embedding_layer = Embedding(kwargs['nchars'], kwargs['hidden_size'], input_length = kwargs['max_seq_len'] - 1, mask_zero = True, trainable = True, name = 'embedding_layer1')
+    embedding_layer = Embedding(kwargs['nchars'], kwargs['emb_dim'], input_length = kwargs['max_seq_len'] - 1, mask_zero = True, trainable = True, name = 'embedding_layer')
 
-    # lstm1 = LSTM(kwargs['hidden_size'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm1')
+    # lstm1 = LSTM(kwargs['lstm_hidden_dim'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm1')
 
-    lstm1 = LSTM(kwargs['hidden_size'], return_sequences = True, name = 'lstm1')
+    lstm1 = LSTM(kwargs['lstm_hidden_dim'], return_sequences = True, name = 'lstm1')
 
-    # lstm2 = LSTM(kwargs['hidden_size'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm2')
+    # lstm2 = LSTM(kwargs['lstm_hidden_dim'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm2')
 
-    lstm2 = LSTM(kwargs['hidden_size'], return_sequences = True, name = 'lstm2')
+    lstm2 = LSTM(kwargs['lstm_hidden_dim'], return_sequences = True, name = 'lstm2')
 
     sequence_input = Input(shape = (kwargs['max_seq_len'] - 1,), dtype = 'int32')
 
@@ -54,15 +53,15 @@ def build_lm_model(kwargs):
 
 def build_clf_model(kwargs):
 
-    embedding_layer = Embedding(kwargs['nchars'], kwargs['hidden_size'], input_length = kwargs['max_seq_len'], mask_zero = True, trainable = True, name = 'embedding_layer2')
+    embedding_layer = Embedding(kwargs['nchars'], kwargs['emb_dim'], input_length = kwargs['max_seq_len'], mask_zero = True, trainable = True, name = 'embedding_layer')
 
-    # lstm1 = LSTM(kwargs['hidden_size'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm1')
+    # lstm1 = LSTM(kwargs['lstm_hidden_dim'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm1')
 
-    lstm1 = LSTM(kwargs['hidden_size'], return_sequences = True, name = 'lstm1')
+    lstm1 = LSTM(kwargs['lstm_hidden_dim'], return_sequences = True, name = 'lstm1')
 
-    # lstm2 = LSTM(kwargs['hidden_size'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm2')
+    # lstm2 = LSTM(kwargs['lstm_hidden_dim'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm2')
 
-    lstm2 = LSTM(kwargs['hidden_size'], return_sequences = True, name = 'lstm2')
+    lstm2 = LSTM(kwargs['lstm_hidden_dim'], return_sequences = True, name = 'lstm2')
 
     sequence_input = Input(shape = (kwargs['max_seq_len'],), dtype = 'int32')
 
@@ -103,7 +102,7 @@ def train_lm_streaming(model, corpus, args):
 
     model.fit_generator(corpus.unld_tr_data.get_mini_batch(args['batch_size']),
                         int(math.floor(corpus.unld_tr_data.wc / args['batch_size'])),
-                        epochs = 15,
+                        epochs = 20,
                         verbose = 2,
                         callbacks = [early_stopping, model_checkpoint],
                         validation_data = corpus.unld_val_data.get_mini_batch(args['batch_size']),
@@ -177,7 +176,7 @@ def sample(preds, temperature = 1.0):
     probas = np.random.multinomial(1, preds, 1)
     return np.argmax(probas)
 
-def generate_text(model, corpus):
+def generate_text(model, corpus, args):
 
     start_seqs = ['if u Lookin ', 'RT ', 'I Dnt Carry ', '@younggodumb: ', 'Pockets heavy ', 'I Jst Got ']
 
@@ -211,6 +210,18 @@ def generate_text(model, corpus):
 #
 #     return emb_matrix
 
+def print_hyper_params(args):
+
+    print 'max_seq_len: ', args['max_seq_len']
+    print 'nclasses: ', args['nclasses']
+    print 'nchars: ', args['nchars']
+    print 'n_epochs: ', args['n_epochs']
+    print 'lstm_hidden_dim: ', args['lstm_hidden_dim']
+    print 'emb_dim: ', args['emb_dim']
+    print 'dropout: ', args['dropout']
+    print 'learning_rate: ', args['learning_rate']
+    print 'batch_size: ', args['batch_size']
+
 def main(args):
 
     # corpus = TweetCorpus(unlabeled_tweets_file = args['tweets_file'])
@@ -218,11 +229,10 @@ def main(args):
     corpus = TweetCorpus(args['train_file'], args['val_file'], args['test_file'], args['unld_train_file'], args['unld_val_file'], args['dictionaries_file'])
 
     args['max_seq_len'] = corpus.max_len
-    print 'max_seq_len: ', args['max_seq_len']
     args['nclasses'] = len(corpus.label2idx)
-    print 'nclasses: ', args['nclasses']
     args['nchars'] = len(corpus.char2idx) + 1
-    print 'nchars: ', args['nchars']
+
+    print_hyper_params(args)
 
     if args['mode'] == 'lm':
         print 'Creating language model . . .'
@@ -230,15 +240,14 @@ def main(args):
         print 'Training language model . . .'
         # train_lm(lm, corpus, args)
         train_lm_streaming(lm, corpus, args)
-        if os.path.isfile(os.path.join(args['model_save_dir'], 'language_model.h5')):
-            print 'Loading weights from trained language model for text generation . . .'
-            lm.load_weights(os.path.join(args['model_save_dir'], 'language_model.h5'), by_name = True)
-        else:
-            print 'No trained language model available . . .!'
-            sys.exit(0)
-
-        # print 'Generating some fresh text . . .'
-        # generate_text(lm, corpus)
+#         if os.path.isfile(os.path.join(args['model_save_dir'], 'language_model.h5')):
+#             print 'Loading weights from trained language model for text generation . . .'
+#             lm.load_weights(os.path.join(args['model_save_dir'], 'language_model.h5'), by_name = True)
+#         else:
+#             print 'No trained language model available . . .!'
+#             sys.exit(0)
+#         print 'Generating some fresh text . . .'
+#         generate_text(lm, corpus, args)
 
     elif args['mode'] == 'clf':
         print 'Creating classifier model . . .'
@@ -250,25 +259,29 @@ def main(args):
         print 'Training classifier model . . .'
         train_classifier(clf, corpus, args)
 
-if __name__ == '__main__':
+def parse_arguments():
 
     parser = argparse.ArgumentParser(description = '')
 
     parser.add_argument('train_file', type = str)
     parser.add_argument('val_file', type = str)
     parser.add_argument('test_file', type = str)
-    parser.add_argument('unld_train_file', type = str)
-    parser.add_argument('unld_val_file', type = str)
     parser.add_argument('dictionaries_file', type = str)
     parser.add_argument('model_save_dir', type = str)
     parser.add_argument('mode', type = str)
+    parser.add_argument('--unld_train_file', type = str, default = None)
+    parser.add_argument('--unld_val_file', type = str, default = None)
     parser.add_argument('--n_epochs', type = int, default = 50)
-    parser.add_argument('--hidden_size', type = int, default = 256)
+    parser.add_argument('--lstm_hidden_dim', type = int, default = 256)
+    parser.add_argument('--emb_dim', type = int, default = 50)
     parser.add_argument('--dropout', type = float, default = 0.5)
     parser.add_argument('--learning_rate', type = float, default = 0.01)
-
     parser.add_argument('--batch_size', type = int, default = 64)
 
     args = vars(parser.parse_args())
 
-    main(args)
+    return args
+
+if __name__ == '__main__':
+
+    main(parse_arguments())
