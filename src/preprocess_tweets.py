@@ -45,7 +45,7 @@ def parse_line(line, text_column, label_column, max_len, normalize = False):
     X_c = line[text_column]
     if label_column in line.keys():
         y_c = collapse_label(line[label_column])
-        # y_c = line[label_column])
+        # y_c = line[label_column]
     else:
         y_c = None
 
@@ -59,6 +59,7 @@ class TweetPreprocessor:
         self.char2idx = defaultdict(int)
         self.label2idx = defaultdict(int)
         self.len_dict = defaultdict(int)
+        self.class2count = defaultdict(int)
 
     def datum_to_string(self, X_ids, y_id):
 
@@ -68,7 +69,7 @@ class TweetPreprocessor:
         file_str.write(y_id)
         return file_str.getvalue()
 
-    def read_data(self, output_files_dir, data_file, parser, text_column, label_column, normalize = False):
+    def read_data(self, output_files_dir, data_file, parser, text_column, label_column, normalize = False, is_train = False):
 
         if data_file is None:
             return
@@ -94,6 +95,11 @@ class TweetPreprocessor:
                     y_id = self.update_label2idx(y_c)
                 else:
                     y_id = ''
+
+                # update class dictionary
+                if is_train and y_id != '':
+                    self.class2count[int(y_id)] += 1
+
                 fhw.write(self.datum_to_string(X_ids, y_id))
                 fhw.write('\n')
 
@@ -122,6 +128,21 @@ class TweetPreprocessor:
             self.label2idx[label] = len(self.label2idx)
 
         return str(self.label2idx[label])
+
+    def get_class_weights(self):
+
+        total = 0.0
+        for cls in self.class2count.keys():
+            total += (float(1) / self.class2count[cls])
+
+        K = float(1) / total
+
+        n_classes = len(self.label2idx)
+        class_weights = {}
+        for i in xrange(n_classes):
+            class_weights[i] = (K / self.class2count[i])
+
+        return class_weights
 
     def split_unlabeled_data(self, output_files_dir, data_file, split_ratio = 0.2):
 
@@ -152,6 +173,7 @@ class TweetPreprocessor:
         print 'Number of unique characters: ', len(self.char2idx) + 1
         print 'Number of classes: ', len(self.label2idx)
         print 'Length distribution: ', self.len_dict
+        print 'Class distribution: ', self.class2count
 
 def main(args):
 
@@ -159,7 +181,7 @@ def main(args):
     time_stamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     tweet_preprocessor = TweetPreprocessor(time_stamp, max_len = 150)
     print 'Processing training set . . .'
-    tweet_preprocessor.read_data(args['output_file_dir'], args['train_file'], parse_line, 'CONTENT', 'LABEL', normalize = args['normalize'])
+    tweet_preprocessor.read_data(args['output_file_dir'], args['train_file'], parse_line, 'CONTENT', 'LABEL', normalize = args['normalize'], is_train = True)
     print 'Processing validation set . . .'
     tweet_preprocessor.read_data(args['output_file_dir'], args['val_file'], parse_line, 'CONTENT', 'LABEL', normalize = args['normalize'])
     print 'Processing test set . . .'
@@ -167,8 +189,9 @@ def main(args):
     print 'Processing unlabeled set . . .'
     tweet_preprocessor.read_data(args['output_file_dir'], args['tweets_file'], parse_line, 'text', '', normalize = args['normalize'])
     tweet_preprocessor.print_stats()
+    weights = tweet_preprocessor.get_class_weights()
     tweet_preprocessor.split_unlabeled_data(args['output_file_dir'], args['tweets_file'], split_ratio = 0.2)
-    pickle.dump([tweet_preprocessor.char2idx, tweet_preprocessor.label2idx, tweet_preprocessor.max_len], open(os.path.join(args['output_file_dir'], 'dictionaries_' + time_stamp + '.p'), "wb"))
+    pickle.dump([tweet_preprocessor.char2idx, tweet_preprocessor.label2idx, weights, tweet_preprocessor.max_len], open(os.path.join(args['output_file_dir'], 'dictionaries_' + time_stamp + '.p'), "wb"))
 
 if __name__ == '__main__':
 

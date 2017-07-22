@@ -157,7 +157,7 @@ def train_classifier(model, corpus, args):
     hist = model.fit([X_train], y_train, \
             validation_data = ([X_val], y_val), \
             epochs = args['n_epochs'], verbose = 2, batch_size = args['batch_size'], shuffle = True, \
-            callbacks = [early_stopping, model_checkpoint])
+            callbacks = [early_stopping, model_checkpoint], class_weight = corpus.class_weights)
 
     model.load_weights(bst_model_path)
 
@@ -273,7 +273,7 @@ def parse_arguments():
     parser.add_argument('--unld_val_file', type = str, default = None)
     parser.add_argument('--n_epochs', type = int, default = 50)
     parser.add_argument('--lstm_hidden_dim', type = int, default = 256)
-    parser.add_argument('--emb_dim', type = int, default = 50)
+    parser.add_argument('--emb_dim', type = int, default = 128)
     parser.add_argument('--dropout', type = float, default = 0.5)
     parser.add_argument('--learning_rate', type = float, default = 0.01)
     parser.add_argument('--batch_size', type = int, default = 64)
