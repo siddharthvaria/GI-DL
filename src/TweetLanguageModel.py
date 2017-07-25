@@ -9,7 +9,7 @@ import math
 import os
 import numpy as np
 from random import randint
-from TweetReader1 import TweetCorpus
+from data_utils.TweetReader1 import TweetCorpus
 from Datasets import Dataset2
 from torch.utils.data import DataLoader
 

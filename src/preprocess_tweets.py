@@ -1,4 +1,4 @@
-from utils import unicode_csv_reader2
+from data_utils.utils import unicode_csv_reader2
 from collections import defaultdict
 import os
 from cStringIO import StringIO
@@ -6,8 +6,9 @@ import argparse
 import cPickle as pickle
 import datetime
 import numpy as np
+import re
 from random import randint
-from preprocess import preprocess
+# from data_utils.preprocess import preprocess
 
 aggress = set(['aggress', 'insult', 'snitch', 'threat', 'brag', 'aod', 'aware', 'authority', 'trust', 'fight', 'pride', 'power', 'lyric'])
 loss = set(['loss', 'grief', 'death', 'sad', 'alone', 'reac', 'guns'])
@@ -30,17 +31,29 @@ def collapse_label(fine_grained):
 
     return 'other'
 
+def preprocess(text):
+
+    # remove emoji placeholders
+    text = re.sub('(::emoji::)|#|', '', text.lower())
+    # replace user handles with a constant
+    text = re.sub('@[0-9a-zA-Z_]+', 'USER_HANDLE', text)
+    # replace user handles with a constant
+    text = re.sub('https?://[a-zA-Z0-9_\./]*', 'URL', text)
+    # remove extra white space due to above operations
+    text = re.sub(' +', ' ', text)
+    return text
+
 def parse_line(line, text_column, label_column, max_len, normalize = False):
 
     # take line (dict) as input and return text along with label if label is present
     if line[text_column] in (None, ''):
         return None, None
 
-    if len(line[text_column]) > max_len:
-        return None, None
-
     if normalize:
         line[text_column] = preprocess(line[text_column])
+
+    if len(line[text_column]) > max_len:
+        line[text_column] = line[text_column][:max_len]
 
     X_c = line[text_column]
     if label_column in line.keys():
@@ -200,7 +213,7 @@ if __name__ == '__main__':
     parser.add_argument('val_file', type = str)
     parser.add_argument('test_file', type = str)
     parser.add_argument('--tweets_file', type = str, default = None)
-    parser.add_argument('--normalize', type = bool, default = False)
+    parser.add_argument('--normalize', type = bool, default = True)
     parser.add_argument('output_file_dir', type = str)
 
     args = vars(parser.parse_args())
