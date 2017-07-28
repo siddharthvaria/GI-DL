@@ -1,11 +1,11 @@
 import numpy as np
 import argparse
 from keras.utils import np_utils
-from keras_impl.models import build_clf_model, train_classifier
-from keras_impl.models import build_lm_model, train_lm_streaming
+from keras_impl.models import Classifier, LanguageModel
 from sklearn.metrics import classification_report
 from data_utils.TweetReader2 import TweetCorpus
 from TernaryClassifier import print_hyper_params
+
 import os
 
 def get_class_weights(y):
@@ -58,14 +58,6 @@ def get_binary_data(X, y, pos_classes, neg_classes):
     _y = np_utils.to_categorical(_y, 2)
     return _X, _y
 
-def build_cc_clf_model(kwargs):
-
-    clf1 = build_clf_model(kwargs)
-
-    clf2 = build_clf_model(kwargs)
-
-    return clf1, clf2
-
 def print_classification_reports(corpus, y_test, y_pred1, y_pred2):
     y_pred = []
     for y_c1, y_c2 in zip(y_pred1, y_pred2):
@@ -112,12 +104,12 @@ def train_cc_classifier(clf1, clf2, corpus, args):
     X_train1, y_train1 = get_binary_data(X_train, y_train, [corpus.label2idx['loss'], corpus.label2idx['aggress']], [corpus.label2idx['other']])
     X_val1, y_val1 = get_binary_data(X_val, y_val, [corpus.label2idx['loss'], corpus.label2idx['aggress']], [corpus.label2idx['other']])
     # X_test1, y_test1 = get_binary_data(X_test, y_test, [corpus.label2idx['loss'], corpus.label2idx['aggress']], [corpus.label2idx['other']])
-    y_pred1 = train_classifier(clf1, X_train1, X_val1, X_test, y_train1, y_val1, get_class_weights(y_train1), args)
+    y_pred1 = clf1.fit(X_train1, X_val1, X_test, y_train1, y_val1, get_class_weights(y_train1), args)
     # clf2 for aggression v/s loss
     X_train2, y_train2 = get_binary_data(X_train, y_train, [corpus.label2idx['aggress']], [corpus.label2idx['loss']])
     X_val2, y_val2 = get_binary_data(X_val, y_val, [corpus.label2idx['aggress']], [corpus.label2idx['loss']])
     # X_test2, y_test2 = get_binary_data(X_test, y_test, [corpus.label2idx['aggress']], [corpus.label2idx['loss']])
-    y_pred2 = train_classifier(clf2, X_train2, X_val2, X_test, y_train2, y_val2, get_class_weights(y_train2), args)
+    y_pred2 = clf2.fit(X_train2, X_val2, X_test, y_train2, y_val2, get_class_weights(y_train2), args)
     # print classification_report(np.argmax(y_test1, axis = 1), y_pred1, target_names = ['loss', 'aggress'])
     print_classification_reports(corpus, y_test, y_pred1, y_pred2)
 
@@ -159,18 +151,19 @@ def main(args):
 
     if args['mode'] == 'lm':
         print 'Creating language model . . .'
-        lm = build_lm_model(args)
+        lm = LanguageModel(args)
         print 'Training language model . . .'
         # train_lm(lm, corpus, args)
-        train_lm_streaming(lm, corpus, args)
+        lm.fit(corpus, args)
     elif args['mode'] == 'clf':
         print 'Creating classifier model . . .'
-        clf1, clf2 = build_cc_clf_model(args)
+        clf1 = Classifier(args)
+        clf2 = Classifier(args)
         # if the weights from the lm exists then use those weights instead
         if args['pretrain'] and os.path.isfile(os.path.join(args['model_save_dir'], 'language_model.h5')):
             print 'Loading weights from trained language model . . .'
-            clf1.load_weights(os.path.join(args['model_save_dir'], 'language_model.h5'), by_name = True)
-            clf2.load_weights(os.path.join(args['model_save_dir'], 'language_model.h5'), by_name = True)
+            clf1.model.load_weights(os.path.join(args['model_save_dir'], 'language_model.h5'), by_name = True)
+            clf2.model.load_weights(os.path.join(args['model_save_dir'], 'language_model.h5'), by_name = True)
 
         print 'Training classifier model . . .'
         train_cc_classifier(clf1, clf2, corpus, args)

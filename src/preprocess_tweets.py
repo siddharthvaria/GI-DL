@@ -192,7 +192,7 @@ def main(args):
 
     print 'Normalize Tweets: ', args['normalize']
     time_stamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-    tweet_preprocessor = TweetPreprocessor(time_stamp, max_len = 150)
+    tweet_preprocessor = TweetPreprocessor(time_stamp, max_len = 140)
     print 'Processing training set . . .'
     tweet_preprocessor.read_data(args['output_file_dir'], args['train_file'], parse_line, 'CONTENT', 'LABEL', normalize = args['normalize'], is_train = True)
     print 'Processing validation set . . .'

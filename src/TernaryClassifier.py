@@ -1,7 +1,8 @@
 from data_utils.TweetReader2 import TweetCorpus
-from keras_impl.models import build_clf_model, build_lm_model
-from keras_impl.models import train_lm_streaming, train_classifier
+from keras_impl.models import Classifier, LanguageModel
 from sklearn.metrics import classification_report
+from sklearn.manifold import TSNE
+import matplotlib.pyplot as plt
 
 import numpy as np
 import argparse
@@ -63,6 +64,40 @@ def print_hyper_params(args):
     print 'dropout: ', args['dropout']
     print 'batch_size: ', args['batch_size']
 
+def vizualize_embeddings(emb_matrix, char2idx):
+
+    assert len(emb_matrix) == (len(char2idx) + 1), 'len(emb_matrix) != len(char2idx) + 1'
+
+    unicode_chars = []
+    unicode_embs = []
+    for i, ch in enumerate(char2idx.keys()):
+        print i, ch
+        try:
+            ch.encode('ascii')
+        except UnicodeEncodeError:
+            unicode_chars.append(ch)
+            unicode_embs.append(emb_matrix[i + 1])
+
+    unicode_embs = np.asarray(unicode_embs)
+    model = TSNE(n_components = 2, random_state = 0)
+    np.set_printoptions(suppress = True)
+    trans = model.fit_transform(unicode_embs)
+
+    # plot the emoji using TSNE
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+#     tsne = man.TSNE(perplexity = 50, n_components = 2, init = 'random', n_iter = 300000, early_exaggeration = 1.0,
+#                     n_iter_without_progress = 1000)
+#     trans = tsne.fit_transform(V)
+    x, y = zip(*trans)
+    plt.scatter(x, y, marker = 'o', alpha = 0.0)
+
+    for i in range(len(trans)):
+        ax.annotate(unicode_chars[i], xy = trans[i], textcoords = 'data')
+
+    plt.grid()
+    plt.show()
+
 def main(args):
 
     # corpus = TweetCorpus(unlabeled_tweets_file = args['tweets_file'])
@@ -77,10 +112,10 @@ def main(args):
 
     if args['mode'] == 'lm':
         print 'Creating language model . . .'
-        lm = build_lm_model(args)
+        lm = LanguageModel(args)
         print 'Training language model . . .'
         # train_lm(lm, corpus, args)
-        train_lm_streaming(lm, corpus, args)
+        lm.fit(corpus, args)
 #         if os.path.isfile(os.path.join(args['model_save_dir'], 'language_model.h5')):
 #             print 'Loading weights from trained language model for text generation . . .'
 #             lm.load_weights(os.path.join(args['model_save_dir'], 'language_model.h5'), by_name = True)
@@ -92,15 +127,22 @@ def main(args):
 
     elif args['mode'] == 'clf':
         print 'Creating classifier model . . .'
-        clf = build_clf_model(args)
+        clf = Classifier(args)
         # if the weights from the lm exists then use those weights instead
         if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], 'language_model.h5')):
             print 'Loading weights from trained language model . . .'
-            clf.load_weights(os.path.join(args['model_save_dir'], 'language_model.h5'), by_name = True)
+            clf.model.load_weights(os.path.join(args['model_save_dir'], 'language_model.h5'), by_name = True)
         print 'Training classifier model . . .'
         X_train, X_val, X_test, y_train, y_val, y_test = corpus.get_data_for_classification()
-        y_pred = train_classifier(clf, X_train, X_val, X_test, y_train, y_val, corpus.class_weights, args)
+        y_pred = clf.fit(X_train, X_val, X_test, y_train, y_val, corpus.class_weights, args)
         print classification_report(np.argmax(y_test, axis = 1), y_pred, target_names = corpus.get_class_names())
+    elif args['mode'] == 'analyze':
+        print 'Analyzing embeddings . . .'
+        # lm = LanguageModel(args)
+        clf = Classifier(args)
+        clf.model.load_weights(os.path.join(args['model_save_dir'], 'classifier_model.h5'), by_name = True)
+        emb_matrix = clf.embedding_layer.get_weights()[0]
+        vizualize_embeddings(emb_matrix, corpus.char2idx)
 
 def parse_arguments():
 
