@@ -1,0 +1,6 @@
+===========] - 0s     
+[0.92635896136459794, 0.63106796290110612]
+Class counts: [19, 71, 13]
+[Precision, recall, f-measure] on class 0: 1.72727272727, 0.105263157895, 0.198433420366
+[Precision, recall, f-measure] on class 1: 0.771739130435, 0.887323943662, 0.82550521362
+[Precision, recall, f-measure] on class 2: 0, 0.0, None

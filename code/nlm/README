@@ -1,0 +1,25 @@
+Deep learning files.
+
+================================
+Classifier files
+================================
+
+classify.py: driver for classification; handles entire pretraining and classification pipeline.
+
+preprocess.py: data handling and preprocessing.
+
+classifier.py: plain autoencoder-classifier.
+cascading_classifier.py: cascading classifier w/autoencoder.
+vae_classifier.py: variational autoencoder-based classifier.
+
+================================
+Spelling pair substitution files
+================================
+
+pairs.py
+pipeline.py
+skmodel.py
+
+================================
+Miscellaneous files
+================================
