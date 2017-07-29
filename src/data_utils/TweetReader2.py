@@ -8,12 +8,14 @@ def parse_line(line, mode, max_len, nclasses):
     indices = [int(ch) for ch in x_y[0].split(',')]
     indices = np.asarray([0 for _ in xrange(max_len - len(indices))] + indices)
     if mode == 'lm':
-        # pad the sequence of characters
         X_c = np.asarray(indices[:-1])
         y_c = np_utils.to_categorical(indices[1:], nclasses)
     elif mode == 'clf':
         X_c = np.asarray(indices)
         y_c = np_utils.to_categorical([int(x_y[1])], nclasses)[0]
+    elif mode == 'seq2seq':
+        X_c = np.asarray(indices)
+        y_c = np_utils.to_categorical(indices, nclasses)
     return X_c, y_c
 
 def get_line_count(fname):
@@ -111,12 +113,12 @@ class TweetCorpus:
         if unld_train_file is None:
             self.unld_tr_data = None
         else:
-            self.unld_tr_data = Generator(unld_train_file, 'lm', self.max_len, len(self.char2idx) + 1)
+            self.unld_tr_data = Generator(unld_train_file, 'seq2seq', self.max_len, len(self.char2idx) + 1)
 
         if unld_val_file is None:
             self.unld_val_data = None
         else:
-            self.unld_val_data = Generator(unld_val_file, 'lm', self.max_len, len(self.char2idx) + 1)
+            self.unld_val_data = Generator(unld_val_file, 'seq2seq', self.max_len, len(self.char2idx) + 1)
 
 #         self.unld_tr_data = Corpus(unld_train_file, 'lm', self.max_len, len(self.char2idx) + 1)
 #         self.unld_val_data = Corpus(unld_val_file, 'lm', self.max_len, len(self.char2idx) + 1)
