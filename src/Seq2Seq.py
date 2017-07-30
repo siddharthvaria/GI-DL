@@ -43,7 +43,7 @@ def main(args):
         print 'Creating Autoencoder model . . .'
         ae = AutoEncoder(args)
         print 'Training Autoencoder model . . .'
-        # ae.fit(corpus, args)
+        ae.fit(corpus, args)
         if os.path.isfile(os.path.join(args['model_save_dir'], 'autoencoder_model.h5')):
             print 'Loading weights from trained autoencoder model . . .'
             ae.model.load_weights(os.path.join(args['model_save_dir'], 'autoencoder_model.h5'), by_name = True)
@@ -66,11 +66,11 @@ def parse_arguments():
     parser.add_argument('--unld_train_file', type = str, default = None)
     parser.add_argument('--unld_val_file', type = str, default = None)
     parser.add_argument('--n_epochs', type = int, default = 50)
-    parser.add_argument('--lstm_hidden_dim', type = int, default = 256)
+    parser.add_argument('--lstm_hidden_dim', type = int, default = 1024)
     parser.add_argument('--dense_hidden_dim', type = int, default = 256)
     parser.add_argument('--emb_dim', type = int, default = 128)
     parser.add_argument('--dropout', type = float, default = 0.5)
-    parser.add_argument('--batch_size', type = int, default = 64)
+    parser.add_argument('--batch_size', type = int, default = 32)
 
     args = vars(parser.parse_args())
 

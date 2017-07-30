@@ -147,13 +147,13 @@ class AutoEncoder(object):
 
         self.embedding_layer = Embedding(kwargs['nchars'], kwargs['emb_dim'], input_length = kwargs['max_seq_len'], mask_zero = True, trainable = True, name = 'embedding_layer3')
 
-        self.lstm1 = LSTM(kwargs['lstm_hidden_dim'], return_sequences = True, name = 'lstm1')
+        self.lstm1 = LSTM(kwargs['lstm_hidden_dim'], name = 'lstm1')
 
-        self.lstm2 = LSTM(kwargs['lstm_hidden_dim'], name = 'lstm2')
+        # self.lstm2 = LSTM(kwargs['lstm_hidden_dim'], name = 'lstm2')
 
         self.lstm3 = LSTM(kwargs['lstm_hidden_dim'], return_sequences = True, name = 'lstm3')
 
-        self.lstm4 = LSTM(kwargs['lstm_hidden_dim'], return_sequences = True, name = 'lstm4')
+        # self.lstm4 = LSTM(kwargs['lstm_hidden_dim'], return_sequences = True, name = 'lstm4')
 
         self.ae_op_layer = TimeDistributed(Dense(kwargs['nchars'], activation = 'softmax', name = 'ae_op_layer'))
 
@@ -165,21 +165,23 @@ class AutoEncoder(object):
 
         lstm1_op = self.lstm1(embedded_sequences)
 
-        lstm1_op = Dropout(kwargs['dropout'])(lstm1_op)
+        # lstm1_op = Dropout(kwargs['dropout'])(lstm1_op)
 
-        lstm2_op = self.lstm2(lstm1_op)
+        # lstm2_op = self.lstm2(lstm1_op)
 
-        encoded = Dropout(kwargs['dropout'])(lstm2_op)
+        # encoded = Dropout(kwargs['dropout'])(lstm2_op)
 
-        decoded = RepeatVector(kwargs['max_seq_len'])(encoded)
+        # decoded = RepeatVector(kwargs['max_seq_len'])(encoded)
+
+        decoded = RepeatVector(kwargs['max_seq_len'])(lstm1_op)
 
         decoded = self.lstm3(decoded)
 
         decoded = Dropout(kwargs['dropout'])(decoded)
 
-        decoded = self.lstm4(decoded)
+        # decoded = self.lstm4(decoded)
 
-        decoded = Dropout(kwargs['dropout'])(decoded)
+        # decoded = Dropout(kwargs['dropout'])(decoded)
 
         ae_op = self.ae_op_layer(decoded)
 

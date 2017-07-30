@@ -6,12 +6,13 @@ import argparse
 import cPickle as pickle
 import datetime
 import numpy as np
-import re
+import string, re
 from random import randint
 # from data_utils.preprocess import preprocess
 
 aggress = set(['aggress', 'insult', 'snitch', 'threat', 'brag', 'aod', 'aware', 'authority', 'trust', 'fight', 'pride', 'power', 'lyric'])
 loss = set(['loss', 'grief', 'death', 'sad', 'alone', 'reac', 'guns'])
+regex = re.compile('[%s]' % re.escape(string.punctuation))
 
 def get_delimiter(data_file):
     if data_file.endswith('.csv'):
@@ -37,8 +38,10 @@ def preprocess(text):
     text = re.sub('(::emoji::)|#|', '', text.lower())
     # replace user handles with a constant
     text = re.sub('@[0-9a-zA-Z_]+', 'USER_HANDLE', text)
-    # replace user handles with a constant
+    # replace urls
     text = re.sub('https?://[a-zA-Z0-9_\./]*', 'URL', text)
+    # remove punctuations
+    text = regex.sub(' ', text)
     # remove extra white space due to above operations
     text = re.sub(' +', ' ', text)
     return text
