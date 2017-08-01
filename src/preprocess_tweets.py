@@ -216,7 +216,7 @@ if __name__ == '__main__':
     parser.add_argument('val_file', type = str)
     parser.add_argument('test_file', type = str)
     parser.add_argument('--tweets_file', type = str, default = None)
-    parser.add_argument('--normalize', type = bool, default = True)
+    parser.add_argument('--normalize', type = bool, default = False)
     parser.add_argument('output_file_dir', type = str)
 
     args = vars(parser.parse_args())

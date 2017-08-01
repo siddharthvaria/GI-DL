@@ -6,7 +6,8 @@ import subprocess
 def parse_line(line, mode, max_len, nclasses):
     x_y = line.split('<:>')
     indices = [int(ch) for ch in x_y[0].split(',')]
-    indices = np.asarray([0 for _ in xrange(max_len - len(indices))] + indices)
+    # indices = np.asarray([0 for _ in xrange(max_len - len(indices))] + indices)
+    indices = indices + [0 for _ in xrange(max_len - len(indices))]
     if mode == 'lm':
         X_c = np.asarray(indices[:-1])
         y_c = np_utils.to_categorical(indices[1:], nclasses)

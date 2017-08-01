@@ -147,9 +147,9 @@ class AutoEncoder(object):
 
         self.embedding_layer = Embedding(kwargs['nchars'], kwargs['emb_dim'], input_length = kwargs['max_seq_len'], mask_zero = True, trainable = True, name = 'embedding_layer3')
 
-        self.lstm1 = LSTM(kwargs['lstm_hidden_dim'], name = 'lstm1')
+        self.lstm1 = LSTM(kwargs['lstm_hidden_dim'], return_sequences = True, name = 'lstm1')
 
-        # self.lstm2 = LSTM(kwargs['lstm_hidden_dim'], name = 'lstm2')
+        self.lstm2 = LSTM(kwargs['lstm_hidden_dim'], name = 'lstm2')
 
         self.lstm3 = LSTM(kwargs['lstm_hidden_dim'], return_sequences = True, name = 'lstm3')
 
@@ -165,15 +165,13 @@ class AutoEncoder(object):
 
         lstm1_op = self.lstm1(embedded_sequences)
 
-        # lstm1_op = Dropout(kwargs['dropout'])(lstm1_op)
+        lstm1_op = Dropout(kwargs['dropout'])(lstm1_op)
 
-        # lstm2_op = self.lstm2(lstm1_op)
+        lstm2_op = self.lstm2(lstm1_op)
 
-        # encoded = Dropout(kwargs['dropout'])(lstm2_op)
+        encoded = Dropout(kwargs['dropout'])(lstm2_op)
 
-        # decoded = RepeatVector(kwargs['max_seq_len'])(encoded)
-
-        decoded = RepeatVector(kwargs['max_seq_len'])(lstm1_op)
+        decoded = RepeatVector(kwargs['max_seq_len'])(encoded)
 
         decoded = self.lstm3(decoded)
 
@@ -196,7 +194,7 @@ class AutoEncoder(object):
 
         self.model.summary()
 
-        early_stopping = EarlyStopping(monitor = 'val_loss', patience = 3)
+        early_stopping = EarlyStopping(monitor = 'val_loss', patience = 5)
 
         bst_model_path = os.path.join(args['model_save_dir'], 'autoencoder_model.h5')
 
