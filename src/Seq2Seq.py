@@ -1,4 +1,5 @@
 from data_utils.TweetReader2 import TweetCorpus
+from keras_impl.models import Classifier
 from keras_impl.models import AutoEncoder
 from sklearn.metrics import classification_report
 
@@ -51,6 +52,17 @@ def main(args):
             print 'No trained autoencoder model available . . .!'
             sys.exit(0)
         generate_text(ae.model, corpus, args)
+    elif args['mode'] == 'clf':
+        print 'Creating classifier model . . .'
+        clf = Classifier(args)
+        # if the weights from the autoencoder exists then use those weights instead
+        if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], 'autoencoder_model.h5')):
+            print 'Loading weights from trained autoencoder model . . .'
+            clf.model.load_weights(os.path.join(args['model_save_dir'], 'autoencoder_model.h5'), by_name = True)
+        print 'Training classifier model . . .'
+        X_train, X_val, X_test, y_train, y_val, y_test = corpus.get_data_for_classification()
+        y_pred = clf.fit(X_train, X_val, X_test, y_train, y_val, corpus.class_weights, args)
+        print classification_report(np.argmax(y_test, axis = 1), y_pred, target_names = corpus.get_class_names())
 
 def parse_arguments():
 
@@ -67,7 +79,7 @@ def parse_arguments():
     parser.add_argument('--unld_val_file', type = str, default = None)
     parser.add_argument('--n_epochs', type = int, default = 50)
     parser.add_argument('--lstm_hidden_dim', type = int, default = 1024)
-    parser.add_argument('--dense_hidden_dim', type = int, default = 256)
+    parser.add_argument('--dense_hidden_dim', type = int, default = 1024)
     parser.add_argument('--emb_dim', type = int, default = 128)
     parser.add_argument('--dropout', type = float, default = 0.5)
     parser.add_argument('--batch_size', type = int, default = 32)
