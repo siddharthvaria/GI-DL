@@ -83,7 +83,27 @@ def convert_to_tsv(f1, f2, separator):
 
     for line in f.readlines():
         splits = line.split(separator)
-        out.write('\t'.join(line))
+        out.write('\t'.join(splits))
 
-convert_to_tsv('../../csv/Jan9-2012-tweets-clean.txt', '../../tsv/emotion.tsv', ':')
+def char_mapping(f):
+    cmap = {}
+    imap = []
+    i = 0
+
+    for line in open(f, 'r').readlines():
+        for c in line:
+            if not c in cmap:
+                cmap[c] = i
+                imap.append(c)
+                i += 1
+
+    return cmap, imap
+
+#convert_to_tsv('../../csv/Jan9-2012-tweets-clean.txt', '../../tsv/emotion.tsv', ':')
 #convert_to_tsv('../../csv/071717_tweet_responses_collapsed.csv', '../../tsv/unreconciled.tsv', ',')
+#convert_to_tsv('../../csv/unreconciled.csv', '../../tsv/unreconciled.tsv', ',')
+#convert_to_tsv('../../csv/unlabeled_tweets.csv', '../../tsv/emoji_unlabeled.tsv', ',')
+
+cmap, imap = char_mapping('../../tsv/emoji_unlabeled.tsv')
+pickle.dump(cmap, open('13k_cmap.pkl', 'w'))
+pickle.dump(imap, open('13k_imap.pkl', 'w'))
