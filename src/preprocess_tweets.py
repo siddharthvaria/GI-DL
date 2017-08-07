@@ -8,11 +8,13 @@ import datetime
 import numpy as np
 import string, re
 from random import randint
+import codecs
 # from data_utils.preprocess import preprocess
 
 aggress = set(['aggress', 'insult', 'snitch', 'threat', 'brag', 'aod', 'aware', 'authority', 'trust', 'fight', 'pride', 'power', 'lyric'])
 loss = set(['loss', 'grief', 'death', 'sad', 'alone', 'reac', 'guns'])
 regex = re.compile('[%s]' % re.escape(string.punctuation))
+regex_digit = re.compile(r"[+-]?\d+(?:\.\d+)?")
 
 def get_delimiter(data_file):
     if data_file.endswith('.csv'):
@@ -33,27 +35,39 @@ def collapse_label(fine_grained):
     return 'other'
 
 def preprocess(text):
-
+    # replace all other white space with a single space
+    text = re.sub('\s+', ' ', text)
     # remove emoji placeholders
     text = re.sub('(::emoji::)|#|', '', text.lower())
     # replace user handles with a constant
     text = re.sub('@[0-9a-zA-Z_]+', 'USER_HANDLE', text)
     # replace urls
     text = re.sub('https?://[a-zA-Z0-9_\./]*', 'URL', text)
-    # remove punctuations
-    text = regex.sub(' ', text)
+#     # remove punctuations
+#     text = regex.sub(' ', text)
+#     # remove digits below
+#     text = regex_digit.sub(' ', text)
     # remove extra white space due to above operations
     text = re.sub(' +', ' ', text)
     return text
 
-def parse_line(line, text_column, label_column, max_len, normalize = False):
+def parse_line(line, text_column, label_column, max_len, stop_chars = None, normalize = False):
 
     # take line (dict) as input and return text along with label if label is present
     if line[text_column] in (None, ''):
         return None, None
 
+    if stop_chars is not None:
+        line[text_column] = [ch for ch in line[text_column] if ch not in stop_chars]
+        line[text_column] = ''.join(line[text_column])
+
     if normalize:
         line[text_column] = preprocess(line[text_column])
+
+    # print line[text_column]
+
+    if line[text_column] in (None, ''):
+        return None, None
 
     if len(line[text_column]) > max_len:
         line[text_column] = line[text_column][:max_len]
@@ -67,9 +81,18 @@ def parse_line(line, text_column, label_column, max_len, normalize = False):
 
     return X_c, y_c
 
+def read_stop_chars(stop_chars_file):
+    stop_chars = []
+    with codecs.open(stop_chars_file, 'r', encoding = 'utf-8') as fh:
+        for line in fh:
+            ch = line.split('\t')[0].strip()
+            stop_chars.append(ch)
+    return set(stop_chars)
+
 class TweetPreprocessor:
 
-    def __init__(self, time_stamp, max_len):
+    def __init__(self, stop_chars, time_stamp, max_len):
+        self.stop_chars = stop_chars
         self.time_stamp = time_stamp
         self.max_len = max_len
         self.char2idx = defaultdict(int)
@@ -80,7 +103,7 @@ class TweetPreprocessor:
     def datum_to_string(self, X_ids, y_id):
 
         file_str = StringIO()
-        file_str.write(','.join(X_ids))
+        file_str.write(','.join(X_ids).strip())
         file_str.write('<:>')
         file_str.write(y_id)
         return file_str.getvalue()
@@ -94,17 +117,30 @@ class TweetPreprocessor:
         dot_index = fname.rindex('.')
         fname_wo_ext = fname[:dot_index]
 
-        new_data_file = os.path.join(output_files_dir, fname_wo_ext + '_' + self.time_stamp + '.txt')
+        indices_file = os.path.join(output_files_dir, fname_wo_ext + '_' + self.time_stamp + '.txt')
+        new_data_file = os.path.join(output_files_dir, fname_wo_ext + '_pp_.txt')
 
         delimiter = get_delimiter(data_file)
         line_count = 0
-        with open(data_file, 'r') as fhr, open(new_data_file, 'w') as fhw:
+        with open(data_file, 'r') as fhr, open(indices_file, 'w') as fhw1, codecs.open(new_data_file, 'w', encoding = 'utf-8') as fhw2:
             reader = unicode_csv_reader2(fhr, delimiter = delimiter)
             for row in reader:
                 line_count += 1
-                X_c, y_c = parser(row, text_column, label_column, self.max_len, normalize = normalize)
+                fhw2.write('###########################################################################')
+                fhw2.write('\n')
+                fhw2.write(row[text_column])
+                fhw2.write('\n')
+                X_c, y_c = parser(row, text_column, label_column, self.max_len, stop_chars = self.stop_chars, normalize = normalize)
                 if X_c is None:
+                    fhw2.write('None')
+                    fhw2.write('\n')
+                    fhw2.write('###########################################################################')
+                    fhw2.write('\n')
                     continue
+                fhw2.write(X_c)
+                fhw2.write('\n')
+                fhw2.write('###########################################################################')
+                fhw2.write('\n')
                 X_ids = self.update_char2idx(X_c)
                 # _tmp = ','.join(X_ids)
                 if y_c is not None:
@@ -116,8 +152,8 @@ class TweetPreprocessor:
                 if is_train and y_id != '':
                     self.class2count[int(y_id)] += 1
 
-                fhw.write(self.datum_to_string(X_ids, y_id))
-                fhw.write('\n')
+                fhw1.write(self.datum_to_string(X_ids, y_id))
+                fhw1.write('\n')
 
     def update_char2idx(self, tweet):
 
@@ -195,7 +231,8 @@ def main(args):
 
     print 'Normalize Tweets: ', args['normalize']
     time_stamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-    tweet_preprocessor = TweetPreprocessor(time_stamp, max_len = 140)
+    stop_chars = read_stop_chars(args['stop_chars_file'])
+    tweet_preprocessor = TweetPreprocessor(stop_chars, time_stamp, max_len = 140)
     print 'Processing training set . . .'
     tweet_preprocessor.read_data(args['output_file_dir'], args['train_file'], parse_line, 'CONTENT', 'LABEL', normalize = args['normalize'], is_train = True)
     print 'Processing validation set . . .'
@@ -215,6 +252,7 @@ if __name__ == '__main__':
     parser.add_argument('train_file', type = str)
     parser.add_argument('val_file', type = str)
     parser.add_argument('test_file', type = str)
+    parser.add_argument('stop_chars_file', type = str)
     parser.add_argument('--tweets_file', type = str, default = None)
     parser.add_argument('--normalize', type = bool, default = False)
     parser.add_argument('output_file_dir', type = str)
