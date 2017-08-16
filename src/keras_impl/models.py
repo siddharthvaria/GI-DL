@@ -13,9 +13,9 @@ class LanguageModel(object):
     Wrapper class around Keras Model API
     '''
 
-    def __init__(self, kwargs):
+    def __init__(self, W, kwargs):
 
-        self.embedding_layer = Embedding(kwargs['nchars'], kwargs['emb_dim'], input_length = kwargs['max_seq_len'] - 1, mask_zero = True, trainable = True, name = 'embedding_layer1')
+        self.embedding_layer = Embedding(kwargs['nchars'], kwargs['emb_dim'], input_length = kwargs['max_seq_len'] - 1, weights = [W], mask_zero = True, trainable = True, name = 'embedding_layer1')
 
         # lstm1 = LSTM(kwargs['lstm_hidden_dim'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm1')
 
@@ -74,9 +74,9 @@ class LanguageModel(object):
 
 class Classifier(object):
 
-    def __init__(self, kwargs):
+    def __init__(self, W, kwargs):
 
-        self.embedding_layer = Embedding(kwargs['nchars'], kwargs['emb_dim'], input_length = kwargs['max_seq_len'], mask_zero = True, trainable = True, name = 'embedding_layer2')
+        self.embedding_layer = Embedding(kwargs['nchars'], kwargs['emb_dim'], input_length = kwargs['max_seq_len'], weights = [W], mask_zero = True, trainable = True, name = 'embedding_layer2')
 
         # lstm1 = LSTM(kwargs['lstm_hidden_dim'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm1')
 
@@ -143,9 +143,9 @@ class Classifier(object):
 
 class AutoEncoder(object):
 
-    def __init__(self, kwargs):
+    def __init__(self, W, kwargs):
 
-        self.embedding_layer = Embedding(kwargs['nchars'], kwargs['emb_dim'], input_length = kwargs['max_seq_len'], mask_zero = True, trainable = True, name = 'embedding_layer3')
+        self.embedding_layer = Embedding(kwargs['nchars'], kwargs['emb_dim'], input_length = kwargs['max_seq_len'], weights = [W], mask_zero = True, trainable = True, name = 'embedding_layer3')
 
         self.lstm1 = LSTM(kwargs['lstm_hidden_dim'], return_sequences = True, name = 'lstm1')
 

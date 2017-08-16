@@ -42,7 +42,7 @@ def main(args):
 
     if args['mode'] == 'seq2seq':
         print 'Creating Autoencoder model . . .'
-        ae = AutoEncoder(args)
+        ae = AutoEncoder(corpus.W, args)
         print 'Training Autoencoder model . . .'
         ae.fit(corpus, args)
         if os.path.isfile(os.path.join(args['model_save_dir'], 'autoencoder_model.h5')):
@@ -54,7 +54,7 @@ def main(args):
         generate_text(ae.model, corpus, args)
     elif args['mode'] == 'clf':
         print 'Creating classifier model . . .'
-        clf = Classifier(args)
+        clf = Classifier(corpus.W, args)
         # if the weights from the autoencoder exists then use those weights instead
         if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], 'autoencoder_model.h5')):
             print 'Loading weights from trained autoencoder model . . .'

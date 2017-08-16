@@ -53,6 +53,9 @@ def preprocess(text):
 
 def parse_line(line, text_column, label_column, max_len, stop_chars = None, normalize = False):
 
+    # -4 to account for start and stop markers and spaces
+    _max_len = max_len - 4
+
     # take line (dict) as input and return text along with label if label is present
     if line[text_column] in (None, ''):
         return None, None
@@ -69,8 +72,10 @@ def parse_line(line, text_column, label_column, max_len, stop_chars = None, norm
     if line[text_column] in (None, ''):
         return None, None
 
-    if len(line[text_column]) > max_len:
-        line[text_column] = line[text_column][:max_len]
+    if len(line[text_column]) > _max_len:
+        line[text_column] = line[text_column][:_max_len]
+
+    line[text_column] = '< ' + line[text_column] + ' >'
 
     X_c = line[text_column]
     if label_column in line.keys():
@@ -96,6 +101,9 @@ class TweetPreprocessor:
         self.time_stamp = time_stamp
         self.max_len = max_len
         self.char2idx = defaultdict(int)
+        # add start and stop markers
+        self.char2idx['<'] = 1
+        self.char2idx['>'] = 2
         self.label2idx = defaultdict(int)
         self.len_dict = defaultdict(int)
         self.class2count = defaultdict(int)
@@ -190,11 +198,9 @@ class TweetPreprocessor:
         K = float(1) / total
 
         n_classes = len(self.label2idx)
-        class_weights = {}
+        self.class_weights = {}
         for i in xrange(n_classes):
-            class_weights[i] = (K / self.class2count[i])
-
-        return class_weights
+            self.class_weights[i] = (K / self.class2count[i])
 
     def split_unlabeled_data(self, output_files_dir, data_file, split_ratio = 0.2):
 
@@ -221,6 +227,19 @@ class TweetPreprocessor:
                 else:
                     fhw2.write(line)
 
+    def init_embeddings(self, embeddings_file):
+        unicode_chars, unicode_embs = pickle.load(open(embeddings_file, "rb"))
+        unicode_char2idx = {v:k for k, v in enumerate(unicode_chars)}
+        dim = len(unicode_embs[0])
+        W = np.zeros((len(self.char2idx) + 1, dim))
+        for ch in self.char2idx:
+            if ch in unicode_chars:
+                W[self.char2idx[ch]] = unicode_embs[unicode_char2idx[ch]]
+            else:
+                W[self.char2idx[ch]] = np.random.uniform(-0.25, 0.25, dim)
+        W[0] = np.zeros(dim, dtype = 'float32')
+        return W
+
     def print_stats(self):
         print 'Number of unique characters: ', len(self.char2idx) + 1
         print 'Number of classes: ', len(self.label2idx)
@@ -232,7 +251,7 @@ def main(args):
     print 'Normalize Tweets: ', args['normalize']
     time_stamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     stop_chars = read_stop_chars(args['stop_chars_file'])
-    tweet_preprocessor = TweetPreprocessor(stop_chars, time_stamp, max_len = 140)
+    tweet_preprocessor = TweetPreprocessor(stop_chars, time_stamp, max_len = 144)
     print 'Processing training set . . .'
     tweet_preprocessor.read_data(args['output_file_dir'], args['train_file'], parse_line, 'CONTENT', 'LABEL', normalize = args['normalize'], is_train = True)
     print 'Processing validation set . . .'
@@ -242,9 +261,10 @@ def main(args):
     print 'Processing unlabeled set . . .'
     tweet_preprocessor.read_data(args['output_file_dir'], args['tweets_file'], parse_line, 'text', '', normalize = args['normalize'])
     tweet_preprocessor.print_stats()
-    weights = tweet_preprocessor.get_class_weights()
+    tweet_preprocessor.get_class_weights()
+    W = tweet_preprocessor.init_embeddings(args['embeddings_file'])
     tweet_preprocessor.split_unlabeled_data(args['output_file_dir'], args['tweets_file'], split_ratio = 0.2)
-    pickle.dump([tweet_preprocessor.char2idx, tweet_preprocessor.label2idx, weights, tweet_preprocessor.max_len], open(os.path.join(args['output_file_dir'], 'dictionaries_' + time_stamp + '.p'), "wb"))
+    pickle.dump([W, tweet_preprocessor.char2idx, tweet_preprocessor.label2idx, tweet_preprocessor.class_weights, tweet_preprocessor.max_len], open(os.path.join(args['output_file_dir'], 'dictionaries_' + time_stamp + '.p'), "wb"))
 
 if __name__ == '__main__':
 
@@ -252,7 +272,9 @@ if __name__ == '__main__':
     parser.add_argument('train_file', type = str)
     parser.add_argument('val_file', type = str)
     parser.add_argument('test_file', type = str)
+    parser.add_argument('embeddings_file', type = str)
     parser.add_argument('stop_chars_file', type = str)
+
     parser.add_argument('--tweets_file', type = str, default = None)
     parser.add_argument('--normalize', type = bool, default = False)
     parser.add_argument('output_file_dir', type = str)
