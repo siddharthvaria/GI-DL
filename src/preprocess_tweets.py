@@ -51,10 +51,13 @@ def preprocess(text):
     text = re.sub(' +', ' ', text)
     return text
 
-def parse_line(line, text_column, label_column, max_len, stop_chars = None, normalize = False):
+def parse_line(line, text_column, label_column, max_len, stop_chars = None, normalize = False, add_ss_markers = False, word_level = False):
 
-    # -4 to account for start and stop markers and spaces
-    _max_len = max_len - 4
+    if add_ss_markers:
+        # -4 to account for start and stop markers and spaces
+        _max_len = max_len - 4
+    else:
+        _max_len = max_len
 
     # take line (dict) as input and return text along with label if label is present
     if line[text_column] in (None, ''):
@@ -72,21 +75,27 @@ def parse_line(line, text_column, label_column, max_len, stop_chars = None, norm
     if line[text_column] in (None, ''):
         return None, None
 
+    if word_level:
+        line[text_column] = line[text_column].split(' ')
+
     if len(line[text_column]) > _max_len:
         line[text_column] = line[text_column][:_max_len]
 
-    line[text_column] = '< ' + line[text_column] + ' >'
+    if add_ss_markers:
+        line[text_column] = '< ' + line[text_column] + ' >'
 
     X_c = line[text_column]
     if label_column in line.keys():
-        y_c = collapse_label(line[label_column])
-        # y_c = line[label_column]
+        # y_c = collapse_label(line[label_column])
+        y_c = line[label_column]
     else:
         y_c = None
 
     return X_c, y_c
 
 def read_stop_chars(stop_chars_file):
+    if stop_chars_file is None:
+        return None
     stop_chars = []
     with codecs.open(stop_chars_file, 'r', encoding = 'utf-8') as fh:
         for line in fh:
@@ -96,14 +105,21 @@ def read_stop_chars(stop_chars_file):
 
 class TweetPreprocessor:
 
-    def __init__(self, stop_chars, time_stamp, max_len):
+    def __init__(self, stop_chars, time_stamp, max_len, word_level, normalize, add_ss_markers):
+
         self.stop_chars = stop_chars
         self.time_stamp = time_stamp
         self.max_len = max_len
+        self.word_level = word_level
+        self.normalize = normalize
+        self.add_ss_markers = add_ss_markers
         self.char2idx = defaultdict(int)
+
         # add start and stop markers
-        self.char2idx['<'] = 1
-        self.char2idx['>'] = 2
+        if self.add_ss_markers:
+            self.char2idx['<'] = 1
+            self.char2idx['>'] = 2
+
         self.label2idx = defaultdict(int)
         self.len_dict = defaultdict(int)
         self.class2count = defaultdict(int)
@@ -116,7 +132,7 @@ class TweetPreprocessor:
         file_str.write(y_id)
         return file_str.getvalue()
 
-    def read_data(self, output_files_dir, data_file, parser, text_column, label_column, normalize = False, is_train = False):
+    def read_data(self, output_files_dir, data_file, parser, text_column, label_column, is_train = False):
 
         if data_file is None:
             return
@@ -138,14 +154,16 @@ class TweetPreprocessor:
                 fhw2.write('\n')
                 fhw2.write(row[text_column])
                 fhw2.write('\n')
-                X_c, y_c = parser(row, text_column, label_column, self.max_len, stop_chars = self.stop_chars, normalize = normalize)
+                # optional parameters to the parser
+                # stop_chars = None, normalize = False, add_ss_markers = False, word_level = False
+                X_c, y_c = parser(row, text_column, label_column, self.max_len, stop_chars = self.stop_chars, normalize = self.normalize, word_level = self.word_level, add_ss_markers = self.add_ss_markers)
                 if X_c is None:
                     fhw2.write('None')
                     fhw2.write('\n')
                     fhw2.write('###########################################################################')
                     fhw2.write('\n')
                     continue
-                fhw2.write(X_c)
+                fhw2.write(''.join(X_c))
                 fhw2.write('\n')
                 fhw2.write('###########################################################################')
                 fhw2.write('\n')
@@ -171,6 +189,9 @@ class TweetPreprocessor:
         idx = []
 
         self.len_dict[len(tweet)] += 1
+
+        if len(tweet) == 1:
+            print tweet
 
         for char in tweet:
             if char not in self.char2idx:
@@ -227,13 +248,17 @@ class TweetPreprocessor:
                 else:
                     fhw2.write(line)
 
-    def init_embeddings(self, embeddings_file):
-        unicode_chars, unicode_embs = pickle.load(open(embeddings_file, "rb"))
-        unicode_char2idx = {v:k for k, v in enumerate(unicode_chars)}
-        dim = len(unicode_embs[0])
+    def init_embeddings(self, embeddings_file, emb_dim):
+        unicode_chars = None
+        unicode_embs = None
+        dim = emb_dim
+        if embeddings_file is not None:
+            unicode_chars, unicode_embs = pickle.load(open(embeddings_file, "rb"))
+            unicode_char2idx = {v:k for k, v in enumerate(unicode_chars)}
+            dim = len(unicode_embs[0])
         W = np.zeros((len(self.char2idx) + 1, dim))
         for ch in self.char2idx:
-            if ch in unicode_chars:
+            if unicode_chars is not None and ch in unicode_chars:
                 W[self.char2idx[ch]] = unicode_embs[unicode_char2idx[ch]]
             else:
                 W[self.char2idx[ch]] = np.random.uniform(-0.25, 0.25, dim)
@@ -251,33 +276,36 @@ def main(args):
     print 'Normalize Tweets: ', args['normalize']
     time_stamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     stop_chars = read_stop_chars(args['stop_chars_file'])
-    tweet_preprocessor = TweetPreprocessor(stop_chars, time_stamp, max_len = 144)
+    tweet_preprocessor = TweetPreprocessor(stop_chars, time_stamp, max_len = 150, word_level = args['word_level'], normalize = args['normalize'], add_ss_markers = args['add_ss_markers'])
     print 'Processing training set . . .'
-    tweet_preprocessor.read_data(args['output_file_dir'], args['train_file'], parse_line, 'CONTENT', 'LABEL', normalize = args['normalize'], is_train = True)
+    tweet_preprocessor.read_data(args['output_file_dir'], args['train_file'], parse_line, 'CONTENT', 'LABEL', is_train = True)
     print 'Processing validation set . . .'
-    tweet_preprocessor.read_data(args['output_file_dir'], args['val_file'], parse_line, 'CONTENT', 'LABEL', normalize = args['normalize'])
+    tweet_preprocessor.read_data(args['output_file_dir'], args['val_file'], parse_line, 'CONTENT', 'LABEL')
     print 'Processing test set . . .'
-    tweet_preprocessor.read_data(args['output_file_dir'], args['test_file'], parse_line, 'CONTENT', 'LABEL', normalize = args['normalize'])
+    tweet_preprocessor.read_data(args['output_file_dir'], args['test_file'], parse_line, 'CONTENT', 'LABEL')
     print 'Processing unlabeled set . . .'
-    tweet_preprocessor.read_data(args['output_file_dir'], args['tweets_file'], parse_line, 'text', '', normalize = args['normalize'])
+    tweet_preprocessor.read_data(args['output_file_dir'], args['tweets_file'], parse_line, 'CONTENT', '')
     tweet_preprocessor.print_stats()
     tweet_preprocessor.get_class_weights()
-    W = tweet_preprocessor.init_embeddings(args['embeddings_file'])
+    W = tweet_preprocessor.init_embeddings(args['embeddings_file'], args['emb_dim'])
     tweet_preprocessor.split_unlabeled_data(args['output_file_dir'], args['tweets_file'], split_ratio = 0.2)
     pickle.dump([W, tweet_preprocessor.char2idx, tweet_preprocessor.label2idx, tweet_preprocessor.class_weights, tweet_preprocessor.max_len], open(os.path.join(args['output_file_dir'], 'dictionaries_' + time_stamp + '.p'), "wb"))
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description = '')
-    parser.add_argument('train_file', type = str)
-    parser.add_argument('val_file', type = str)
-    parser.add_argument('test_file', type = str)
-    parser.add_argument('embeddings_file', type = str)
-    parser.add_argument('stop_chars_file', type = str)
+    parser.add_argument('train_file', type = str, help = 'labeled train set')
+    parser.add_argument('val_file', type = str, help = 'labeled validation set')
+    parser.add_argument('test_file', type = str, help = 'labeled test set')
+    parser.add_argument('output_file_dir', type = str, help = 'directory where output files should be saved')
 
-    parser.add_argument('--tweets_file', type = str, default = None)
-    parser.add_argument('--normalize', type = bool, default = False)
-    parser.add_argument('output_file_dir', type = str)
+    parser.add_argument('--stop_chars_file', type = str, default = None, help = 'file containing stop characters/words')
+    parser.add_argument('--embeddings_file', type = str, default = None, help = 'file containing pre-trained embeddings')
+    parser.add_argument('--tweets_file', type = str, default = None, help = 'unlabeled tweets file')
+    parser.add_argument('--normalize', type = bool, default = False, help = 'If True, the tweets will be normalized. Check "preprocess" method')
+    parser.add_argument('--word_level', type = bool, default = False, help = 'If True, tweets will be processed at word level otherwise at char level')
+    parser.add_argument('--add_ss_markers', type = bool, default = False, help = 'If True, start and stop markers will be added to the tweets')
+    parser.add_argument('--emb_dim', type = int, default = 128, help = 'embedding dimension')
 
     args = vars(parser.parse_args())
 

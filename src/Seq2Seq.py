@@ -1,5 +1,5 @@
 from data_utils.TweetReader2 import TweetCorpus
-from keras_impl.models import Classifier
+from keras_impl.models import Classifier, AutoEncoder_CNN
 from keras_impl.models import AutoEncoder
 from sklearn.metrics import classification_report
 
@@ -42,7 +42,8 @@ def main(args):
 
     if args['mode'] == 'seq2seq':
         print 'Creating Autoencoder model . . .'
-        ae = AutoEncoder(corpus.W, args)
+        # ae = AutoEncoder(corpus.W, args)
+        ae = AutoEncoder_CNN(corpus.W, args)
         print 'Training Autoencoder model . . .'
         ae.fit(corpus, args)
         if os.path.isfile(os.path.join(args['model_save_dir'], 'autoencoder_model.h5')):
@@ -78,9 +79,9 @@ def parse_arguments():
     parser.add_argument('--unld_train_file', type = str, default = None)
     parser.add_argument('--unld_val_file', type = str, default = None)
     parser.add_argument('--n_epochs', type = int, default = 50)
-    parser.add_argument('--lstm_hidden_dim', type = int, default = 512)
+    parser.add_argument('--lstm_hidden_dim', type = int, default = 256)
+    parser.add_argument('--nfeature_maps', type = int, default = 256)
     parser.add_argument('--dense_hidden_dim', type = int, default = 512)
-    parser.add_argument('--emb_dim', type = int, default = 128)
     parser.add_argument('--dropout', type = float, default = 0.5)
     parser.add_argument('--batch_size', type = int, default = 32)
 

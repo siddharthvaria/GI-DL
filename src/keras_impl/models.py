@@ -1,5 +1,7 @@
 from keras.layers import Dropout
 from keras.layers import Input, Embedding, LSTM, Dense, Lambda, RepeatVector
+from keras.layers.convolutional import Conv1D
+from keras.layers.pooling import MaxPooling1D
 from keras.layers.wrappers import TimeDistributed
 from keras.models import Model
 from keras.callbacks import EarlyStopping, ModelCheckpoint
@@ -15,7 +17,7 @@ class LanguageModel(object):
 
     def __init__(self, W, kwargs):
 
-        self.embedding_layer = Embedding(kwargs['nchars'], kwargs['emb_dim'], input_length = kwargs['max_seq_len'] - 1, weights = [W], mask_zero = True, trainable = True, name = 'embedding_layer1')
+        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'] - 1, weights = [W], mask_zero = True, trainable = True, name = 'embedding_layer1')
 
         # lstm1 = LSTM(kwargs['lstm_hidden_dim'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm1')
 
@@ -76,7 +78,7 @@ class Classifier(object):
 
     def __init__(self, W, kwargs):
 
-        self.embedding_layer = Embedding(kwargs['nchars'], kwargs['emb_dim'], input_length = kwargs['max_seq_len'], weights = [W], mask_zero = True, trainable = True, name = 'embedding_layer2')
+        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], mask_zero = True, trainable = True, name = 'embedding_layer2')
 
         # lstm1 = LSTM(kwargs['lstm_hidden_dim'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm1')
 
@@ -145,7 +147,7 @@ class AutoEncoder(object):
 
     def __init__(self, W, kwargs):
 
-        self.embedding_layer = Embedding(kwargs['nchars'], kwargs['emb_dim'], input_length = kwargs['max_seq_len'], weights = [W], mask_zero = True, trainable = True, name = 'embedding_layer3')
+        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], mask_zero = True, trainable = True, name = 'embedding_layer3')
 
         self.lstm1 = LSTM(kwargs['lstm_hidden_dim'], return_sequences = True, name = 'lstm1')
 
@@ -197,6 +199,66 @@ class AutoEncoder(object):
         early_stopping = EarlyStopping(monitor = 'val_loss', patience = 5)
 
         bst_model_path = os.path.join(args['model_save_dir'], 'autoencoder_model.h5')
+
+        model_checkpoint = ModelCheckpoint(bst_model_path, save_best_only = True, save_weights_only = True)
+
+        self.model.fit_generator(corpus.unld_tr_data.get_mini_batch(args['batch_size']),
+                            int(math.floor(corpus.unld_tr_data.wc / args['batch_size'])),
+                            epochs = 20,
+                            verbose = 2,
+                            callbacks = [early_stopping, model_checkpoint],
+                            validation_data = corpus.unld_val_data.get_mini_batch(args['batch_size']),
+                            validation_steps = int(math.floor(corpus.unld_val_data.wc / args['batch_size'])))
+
+class AutoEncoder_CNN(object):
+
+    def __init__(self, W, kwargs):
+
+        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], trainable = True, name = 'embedding_layer4')
+        self.conv1 = Conv1D(kwargs['nfeature_maps'], 7, activation = 'relu')  # number of filters, filter width
+        self.max_pool1 = MaxPooling1D(pool_size = 3)
+        self.conv2 = Conv1D(kwargs['nfeature_maps'], 7, activation = 'relu')  # number of filters, filter width
+        self.max_pool2 = MaxPooling1D(pool_size = 3)
+        self.conv3 = Conv1D(kwargs['nfeature_maps'], 3, activation = 'relu')
+        self.conv4 = Conv1D(kwargs['nfeature_maps'], 3, activation = 'relu')
+        self.lstm1 = LSTM(kwargs['lstm_hidden_dim'], name = 'lstm1')  # part of encoder
+        self.lstm2 = LSTM(kwargs['lstm_hidden_dim'], return_sequences = True, name = 'lstm2')  # part of decoder
+        self.lstm3 = LSTM(kwargs['lstm_hidden_dim'], return_sequences = True, name = 'lstm3')  # part of decoder
+        self.ae_op_layer = TimeDistributed(Dense(kwargs['nchars'], activation = 'softmax', name = 'ae_op_layer'))
+
+        sequence_input = Input(shape = (kwargs['max_seq_len'],), dtype = 'int32')
+        embedded_sequences = self.embedding_layer(sequence_input)
+        embedded_sequences = Dropout(kwargs['dropout'])(embedded_sequences)
+        conv1_op = self.conv1(embedded_sequences)
+        max_pool1_op = self.max_pool1(conv1_op)
+        max_pool1_op = Dropout(kwargs['dropout'])(max_pool1_op)
+        conv2_op = self.conv2(max_pool1_op)
+        max_pool2_op = self.max_pool2(conv2_op)
+        max_pool2_op = Dropout(kwargs['dropout'])(max_pool2_op)
+        conv3_op = self.conv3(max_pool2_op)
+        conv4_op = self.conv4(conv3_op)
+        encoded = self.lstm1(conv4_op)
+        encoded = Dropout(kwargs['dropout'])(encoded)
+        decoded = RepeatVector(kwargs['max_seq_len'])(encoded)
+        decoded = self.lstm2(decoded)
+        decoded = Dropout(kwargs['dropout'])(decoded)
+        decoded = self.lstm3(decoded)
+        decoded = Dropout(kwargs['dropout'])(decoded)
+        ae_op = self.ae_op_layer(decoded)
+        self.model = Model(inputs = [sequence_input], outputs = ae_op)
+
+    def fit(self, corpus, args):
+
+        opt = optimizers.Nadam()
+
+        self.model.compile(loss = 'categorical_crossentropy',
+                optimizer = opt)
+
+        self.model.summary()
+
+        early_stopping = EarlyStopping(monitor = 'val_loss', patience = 5)
+
+        bst_model_path = os.path.join(args['model_save_dir'], 'cnn_autoencoder_model.h5')
 
         model_checkpoint = ModelCheckpoint(bst_model_path, save_best_only = True, save_weights_only = True)
 
