@@ -51,9 +51,9 @@ def main(args):
         ae = AutoEncoder_CNN(corpus.W, args)
         print 'Training Autoencoder model . . .'
         ae.fit(corpus, args)
-        if os.path.isfile(os.path.join(args['model_save_dir'], 'autoencoder_model.h5')):
+        if os.path.isfile(os.path.join(args['model_save_dir'], 'cnn_autoencoder_model.h5')):
             print 'Loading weights from trained autoencoder model . . .'
-            ae.model.load_weights(os.path.join(args['model_save_dir'], 'autoencoder_model.h5'), by_name = True)
+            ae.model.load_weights(os.path.join(args['model_save_dir'], 'cnn_autoencoder_model.h5'), by_name = True)
         else:
             print 'No trained autoencoder model available . . .!'
             sys.exit(0)

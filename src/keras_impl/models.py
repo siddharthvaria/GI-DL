@@ -249,7 +249,7 @@ class AutoEncoder_CNN(object):
 
     def fit(self, corpus, args):
 
-        opt = optimizers.Nadam()
+        opt = optimizers.Adam(clipvalue = 5.0)
 
         self.model.compile(loss = 'categorical_crossentropy',
                 optimizer = opt)
