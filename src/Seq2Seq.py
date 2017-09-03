@@ -39,6 +39,11 @@ def main(args):
     args['max_seq_len'] = corpus.max_len
     args['nclasses'] = len(corpus.label2idx)
     args['nchars'] = len(corpus.char2idx) + 1
+    # check if W is one hot or dense
+    if corpus.W[0][0] == 1:
+        args['trainable'] = False
+    else:
+        args['trainable'] = True
 
     if args['mode'] == 'seq2seq':
         print 'Creating Autoencoder model . . .'
@@ -57,9 +62,9 @@ def main(args):
         print 'Creating classifier model . . .'
         clf = Classifier(corpus.W, args)
         # if the weights from the autoencoder exists then use those weights instead
-        if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], 'autoencoder_model.h5')):
+        if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], 'cnn_autoencoder_model.h5')):
             print 'Loading weights from trained autoencoder model . . .'
-            clf.model.load_weights(os.path.join(args['model_save_dir'], 'autoencoder_model.h5'), by_name = True)
+            clf.model.load_weights(os.path.join(args['model_save_dir'], 'cnn_autoencoder_model.h5'), by_name = True)
         print 'Training classifier model . . .'
         X_train, X_val, X_test, y_train, y_val, y_test = corpus.get_data_for_classification()
         y_pred = clf.fit(X_train, X_val, X_test, y_train, y_val, corpus.class_weights, args)

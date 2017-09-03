@@ -17,7 +17,7 @@ class LanguageModel(object):
 
     def __init__(self, W, kwargs):
 
-        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'] - 1, weights = [W], mask_zero = True, trainable = True, name = 'embedding_layer1')
+        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'] - 1, weights = [W], mask_zero = True, trainable = kwargs['trainable'], name = 'embedding_layer1')
 
         # lstm1 = LSTM(kwargs['lstm_hidden_dim'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm1')
 
@@ -78,7 +78,7 @@ class Classifier(object):
 
     def __init__(self, W, kwargs):
 
-        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], mask_zero = True, trainable = True, name = 'embedding_layer2')
+        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], mask_zero = True, trainable = kwargs['trainable'], name = 'embedding_layer2')
 
         # lstm1 = LSTM(kwargs['lstm_hidden_dim'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm1')
 
@@ -147,7 +147,7 @@ class AutoEncoder(object):
 
     def __init__(self, W, kwargs):
 
-        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], mask_zero = True, trainable = True, name = 'embedding_layer3')
+        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], mask_zero = True, trainable = kwargs['trainable'], name = 'embedding_layer3')
 
         self.lstm1 = LSTM(kwargs['lstm_hidden_dim'], return_sequences = True, name = 'lstm1')
 
@@ -214,7 +214,7 @@ class AutoEncoder_CNN(object):
 
     def __init__(self, W, kwargs):
 
-        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], trainable = True, name = 'embedding_layer4')
+        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], trainable = kwargs['trainable'], name = 'embedding_layer4')
         self.conv1 = Conv1D(kwargs['nfeature_maps'], 7, activation = 'relu')  # number of filters, filter width
         self.max_pool1 = MaxPooling1D(pool_size = 3)
         self.conv2 = Conv1D(kwargs['nfeature_maps'], 7, activation = 'relu')  # number of filters, filter width
@@ -228,20 +228,20 @@ class AutoEncoder_CNN(object):
 
         sequence_input = Input(shape = (kwargs['max_seq_len'],), dtype = 'int32')
         embedded_sequences = self.embedding_layer(sequence_input)
-        embedded_sequences = Dropout(kwargs['dropout'])(embedded_sequences)
+        # embedded_sequences = Dropout(kwargs['dropout'])(embedded_sequences)
         conv1_op = self.conv1(embedded_sequences)
         max_pool1_op = self.max_pool1(conv1_op)
-        max_pool1_op = Dropout(kwargs['dropout'])(max_pool1_op)
+        # max_pool1_op = Dropout(kwargs['dropout'])(max_pool1_op)
         conv2_op = self.conv2(max_pool1_op)
         max_pool2_op = self.max_pool2(conv2_op)
-        max_pool2_op = Dropout(kwargs['dropout'])(max_pool2_op)
+        # max_pool2_op = Dropout(kwargs['dropout'])(max_pool2_op)
         conv3_op = self.conv3(max_pool2_op)
         conv4_op = self.conv4(conv3_op)
         encoded = self.lstm1(conv4_op)
-        encoded = Dropout(kwargs['dropout'])(encoded)
+        # encoded = Dropout(kwargs['dropout'])(encoded)
         decoded = RepeatVector(kwargs['max_seq_len'])(encoded)
         decoded = self.lstm2(decoded)
-        decoded = Dropout(kwargs['dropout'])(decoded)
+        # decoded = Dropout(kwargs['dropout'])(decoded)
         decoded = self.lstm3(decoded)
         decoded = Dropout(kwargs['dropout'])(decoded)
         ae_op = self.ae_op_layer(decoded)

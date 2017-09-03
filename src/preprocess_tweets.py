@@ -248,7 +248,13 @@ class TweetPreprocessor:
                 else:
                     fhw2.write(line)
 
-    def init_embeddings(self, embeddings_file, emb_dim):
+    def get_onehot_vectors(self):
+        W = np.zeros((len(self.char2idx) + 1, len(self.char2idx) + 1))
+        for ii in xrange(len(W)):
+            W[ii][ii] = 1
+        return W
+
+    def get_dense_embeddings(self, embeddings_file, emb_dim):
         unicode_chars = None
         unicode_embs = None
         dim = emb_dim
@@ -273,7 +279,11 @@ class TweetPreprocessor:
 
 def main(args):
 
+    print 'Use_one_hot: ', args['use_one_hot']
     print 'Normalize Tweets: ', args['normalize']
+    print 'Word_level: ', args['word_level']
+    print 'Add_ss_markers: ', args['add_ss_markers']
+
     time_stamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     stop_chars = read_stop_chars(args['stop_chars_file'])
     tweet_preprocessor = TweetPreprocessor(stop_chars, time_stamp, max_len = 150, word_level = args['word_level'], normalize = args['normalize'], add_ss_markers = args['add_ss_markers'])
@@ -287,7 +297,10 @@ def main(args):
     tweet_preprocessor.read_data(args['output_file_dir'], args['tweets_file'], parse_line, 'CONTENT', '')
     tweet_preprocessor.print_stats()
     tweet_preprocessor.get_class_weights()
-    W = tweet_preprocessor.init_embeddings(args['embeddings_file'], args['emb_dim'])
+    if args['use_one_hot']:
+        W = tweet_preprocessor.get_onehot_vectors()
+    else:
+        W = tweet_preprocessor.get_dense_embeddings(args['embeddings_file'], args['emb_dim'])
     tweet_preprocessor.split_unlabeled_data(args['output_file_dir'], args['tweets_file'], split_ratio = 0.2)
     pickle.dump([W, tweet_preprocessor.char2idx, tweet_preprocessor.label2idx, tweet_preprocessor.class_weights, tweet_preprocessor.max_len], open(os.path.join(args['output_file_dir'], 'dictionaries_' + time_stamp + '.p'), "wb"))
 
@@ -300,6 +313,7 @@ if __name__ == '__main__':
     parser.add_argument('output_file_dir', type = str, help = 'directory where output files should be saved')
 
     parser.add_argument('--stop_chars_file', type = str, default = None, help = 'file containing stop characters/words')
+    parser.add_argument('--use_one_hot', type = bool, default = False, help = 'If True, one hot vectors will be used instead of dense embeddings')
     parser.add_argument('--embeddings_file', type = str, default = None, help = 'file containing pre-trained embeddings')
     parser.add_argument('--tweets_file', type = str, default = None, help = 'unlabeled tweets file')
     parser.add_argument('--normalize', type = bool, default = False, help = 'If True, the tweets will be normalized. Check "preprocess" method')
