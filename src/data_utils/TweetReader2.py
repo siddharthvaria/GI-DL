@@ -114,12 +114,12 @@ class TweetCorpus:
         if unld_train_file is None:
             self.unld_tr_data = None
         else:
-            self.unld_tr_data = Generator(unld_train_file, 'seq2seq', self.max_len, len(self.char2idx) + 1)
+            self.unld_tr_data = Generator(unld_train_file, 'lm', self.max_len, len(self.char2idx) + 1)
 
         if unld_val_file is None:
             self.unld_val_data = None
         else:
-            self.unld_val_data = Generator(unld_val_file, 'seq2seq', self.max_len, len(self.char2idx) + 1)
+            self.unld_val_data = Generator(unld_val_file, 'lm', self.max_len, len(self.char2idx) + 1)
 
 #         self.unld_tr_data = Corpus(unld_train_file, 'lm', self.max_len, len(self.char2idx) + 1)
 #         self.unld_val_data = Corpus(unld_val_file, 'lm', self.max_len, len(self.char2idx) + 1)

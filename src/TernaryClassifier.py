@@ -63,6 +63,7 @@ def print_hyper_params(args):
     print 'emb_dim: ', args['emb_dim']
     print 'dropout: ', args['dropout']
     print 'batch_size: ', args['batch_size']
+    print 'trainable: ', args['trainable']
 
 def vizualize_embeddings(emb_matrix, char2idx):
 
@@ -108,11 +109,17 @@ def main(args):
     args['nclasses'] = len(corpus.label2idx)
     args['nchars'] = len(corpus.char2idx) + 1
 
+    # check if W is one hot or dense
+    if corpus.W[0][0] == 1:
+        args['trainable'] = False
+    else:
+        args['trainable'] = True
+
     print_hyper_params(args)
 
     if args['mode'] == 'lm':
         print 'Creating language model . . .'
-        lm = LanguageModel(args)
+        lm = LanguageModel(corpus.W, args)
         print 'Training language model . . .'
         # train_lm(lm, corpus, args)
         lm.fit(corpus, args)
@@ -127,7 +134,7 @@ def main(args):
 
     elif args['mode'] == 'clf':
         print 'Creating classifier model . . .'
-        clf = Classifier(args)
+        clf = Classifier(corpus.W, args)
         # if the weights from the lm exists then use those weights instead
         if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], 'language_model.h5')):
             print 'Loading weights from trained language model . . .'
@@ -148,21 +155,21 @@ def parse_arguments():
 
     parser = argparse.ArgumentParser(description = '')
 
-    parser.add_argument('train_file', type = str)
-    parser.add_argument('val_file', type = str)
-    parser.add_argument('test_file', type = str)
-    parser.add_argument('dictionaries_file', type = str)
+    parser.add_argument('-tr', '--train_file', type = str)
+    parser.add_argument('-val', '--val_file', type = str)
+    parser.add_argument('-tst', '--test_file', type = str)
+    parser.add_argument('-dict', '--dictionaries_file', type = str)
     parser.add_argument('model_save_dir', type = str)
     parser.add_argument('mode', type = str)
-    parser.add_argument('--pretrain', type = bool, default = False)
-    parser.add_argument('--unld_train_file', type = str, default = None)
-    parser.add_argument('--unld_val_file', type = str, default = None)
-    parser.add_argument('--n_epochs', type = int, default = 50)
-    parser.add_argument('--lstm_hidden_dim', type = int, default = 256)
-    parser.add_argument('--dense_hidden_dim', type = int, default = 256)
-    parser.add_argument('--emb_dim', type = int, default = 128)
-    parser.add_argument('--dropout', type = float, default = 0.5)
-    parser.add_argument('--batch_size', type = int, default = 64)
+    parser.add_argument('-pt', '--pretrain', type = bool, default = False)
+    parser.add_argument('-unld_tr', '--unld_train_file', type = str, default = None)
+    parser.add_argument('-unld_val', '--unld_val_file', type = str, default = None)
+    parser.add_argument('-epochs', '--n_epochs', type = int, default = 50)
+    parser.add_argument('-lstm_hd', '--lstm_hidden_dim', type = int, default = 256)
+    parser.add_argument('-dense_hd', '--dense_hidden_dim', type = int, default = 256)
+    parser.add_argument('-edim', '--emb_dim', type = int, default = 128)
+    parser.add_argument('-do', '--dropout', type = float, default = 0.5)
+    parser.add_argument('-bsz', '--batch_size', type = int, default = 64)
 
     args = vars(parser.parse_args())
 

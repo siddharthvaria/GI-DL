@@ -2,7 +2,7 @@ import codecs
 import csv
 import math
 import numpy as np
-from utils import unicode_csv_reader2
+from data_utils.utils import unicode_csv_reader2
 from collections import defaultdict
 from sklearn.model_selection import StratifiedShuffleSplit
 import cStringIO
@@ -13,7 +13,7 @@ class UnicodeWriter:
     which is encoded in the given encoding.
     """
 
-    def __init__(self, f, dialect = csv.excel, encoding = "utf-8", **kwds):
+    def __init__(self, f, dialect = csv.excel, encoding = "utf8", **kwds):
         # Redirect output to a queue
         self.queue = cStringIO.StringIO()
         self.writer = csv.writer(self.queue, dialect = dialect, **kwds)
@@ -21,10 +21,10 @@ class UnicodeWriter:
         self.encoder = codecs.getincrementalencoder(encoding)()
 
     def writerow(self, row):
-        self.writer.writerow([s.encode("utf-8") for s in row])
-        # Fetch UTF-8 output from the queue ...
+        self.writer.writerow([s.encode("utf8") for s in row])
+        # Fetch utf8 output from the queue ...
         data = self.queue.getvalue()
-        data = data.decode("utf-8")
+        data = data.decode("utf8")
         # ... and reencode it into the target encoding
         data = self.encoder.encode(data)
         # write to the target stream

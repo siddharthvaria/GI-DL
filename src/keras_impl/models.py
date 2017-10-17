@@ -1,3 +1,4 @@
+import keras
 from keras.layers import Dropout
 from keras.layers import Input, Embedding, LSTM, Dense, Lambda, RepeatVector
 from keras.layers.convolutional import Conv1D
@@ -6,8 +7,72 @@ from keras.layers.wrappers import TimeDistributed
 from keras.models import Model
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras import optimizers
+from keras.callbacks import Callback
+from sklearn.metrics import f1_score, accuracy_score
 
 import os, math, numpy as np
+
+class MyCallback(Callback):
+    """
+    My custom callback
+    """
+    def __init__(self, val_data, filepath, min_delta = 0, patience = 0, verbose = 0,
+                 save_best_only = False, save_weights_only = False):
+        super(MyCallback, self).__init__()
+        self.patience = patience
+        self.min_delta = min_delta
+        self.wait = 0
+        self.stopped_epoch = 0
+        self.verbose = verbose
+        self.val_data = val_data
+        self.filepath = filepath
+        self.save_best_only = save_best_only
+        self.save_weights_only = save_weights_only
+        self.monitor_op = np.greater
+
+    def on_train_begin(self, logs = None):
+        # Allow instances to be re-used
+        self.wait = 0
+        self.stopped_epoch = 0
+        self.best = -np.Inf
+
+    def on_epoch_end(self, epoch, logs = None):
+
+        y_pred = np.argmax(self.model.predict(self.val_data[0]), axis = 1)
+        y_true = np.argmax(self.val_data[1], axis = 1)
+        macro_f1 = f1_score(y_true, y_pred, average = 'macro')
+        acc = accuracy_score(y_true, y_pred)
+        print ('Val macro F1: %.4f, Val acc: %.4f' % (macro_f1, acc))
+        # check if there is any improvement
+        if self.monitor_op(macro_f1 - self.min_delta, self.best):
+            self.best = macro_f1
+            self.wait = 0
+        else:
+            self.wait += 1
+            if self.wait >= self.patience:
+                self.stopped_epoch = epoch
+                self.model.stop_training = True
+
+        filepath = self.filepath.format(epoch = epoch, **logs)
+        if self.save_best_only:
+            if self.wait == 0:
+                if self.verbose > 0:
+                    print('Saving model to %s' % (filepath))
+                if self.save_weights_only:
+                    self.model.save_weights(filepath, overwrite = True)
+                else:
+                    self.model.save(filepath, overwrite = True)
+        else:
+            if self.verbose > 0:
+                print('Saving model to %s' % (filepath))
+            if self.save_weights_only:
+                self.model.save_weights(filepath, overwrite = True)
+            else:
+                self.model.save(filepath, overwrite = True)
+
+    def on_train_end(self, logs = None):
+        if self.stopped_epoch > 0 and self.verbose > 0:
+            print('Early stopping . . .')
 
 class LanguageModel(object):
 
@@ -124,20 +189,22 @@ class Classifier(object):
 
         self.model.summary()
 
-        early_stopping = EarlyStopping(monitor = 'val_acc', patience = 10)
+        # early_stopping = MyEarlyStopping(([X_val], y_val), patience = 5, verbose = 1)
 
         bst_model_path = os.path.join(args['model_save_dir'], 'classifier_model.h5')
 
-        model_checkpoint = ModelCheckpoint(bst_model_path, save_best_only = True, save_weights_only = True)
+        # model_checkpoint = ModelCheckpoint(bst_model_path, save_best_only = True, save_weights_only = True)
+
+        callback = MyCallback(([X_val], y_val), bst_model_path, patience = 5, verbose = 1, save_best_only = True, save_weights_only = True)
 
         hist = self.model.fit([X_train], y_train, \
-                validation_data = ([X_val], y_val), \
+                validation_data = None, \
                 epochs = args['n_epochs'], verbose = 2, batch_size = args['batch_size'], shuffle = True, \
-                callbacks = [early_stopping, model_checkpoint], class_weight = class_weights)
+                callbacks = [callback], class_weight = class_weights)
 
         self.model.load_weights(bst_model_path)
 
-        bst_val_score = min(hist.history['val_loss'])
+        # bst_val_score = min(hist.history['val_loss'])
 
         preds = self.model.predict([X_test], batch_size = args['batch_size'], verbose = 2)
 
