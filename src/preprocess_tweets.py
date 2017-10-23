@@ -55,16 +55,21 @@ def collapse_label(fine_grained):
 def preprocess(tweet, is_word_level = False):
     # replace all other white space with a single space
     tweet = re.sub('\s+', ' ', tweet)
+    # remove emoji placeholders
+    tweet = re.sub('(::emoji::)', '', tweet)
+    # replace &amp; with and
+    tweet = re.sub('&amp;', 'and', tweet)
     if is_word_level:
         tknzr = TweetTokenizer()
         tokens = tknzr.tokenize(tweet)
         tweet = ' '.join(tokens)
-    # remove emoji placeholders
-    tweet = re.sub('(::emoji::)', '', tweet.lower())
     # replace user handles with a constant
-    tweet = re.sub('@[0-9a-zA-Z_]+', 'USER_HANDLE', tweet)
+    tweet = re.sub('@[0-9a-zA-Z_]+', '__USER_HANDLE__', tweet)
     # replace urls
-    tweet = re.sub('https?://[a-zA-Z0-9_\./]*', 'URL', tweet)
+    tweet = re.sub('https?://[a-zA-Z0-9_\./]*', '__URL__', tweet)
+    # replace retweet markers
+    tweet = re.sub('RT', '__RT__', tweet)
+
     # remove extra white space due to above operations
     tweet = re.sub(' +', ' ', tweet)
     return tweet
@@ -134,12 +139,12 @@ class TweetPreprocessor:
             self.wsp = ' '
         self.normalize = normalize
         self.add_ss_markers = add_ss_markers
-        self.char2idx = defaultdict(int)
+        self.token2idx = defaultdict(int)
 
         # add start and stop markers
         if self.add_ss_markers:
-            self.char2idx['<'] = 1
-            self.char2idx['>'] = 2
+            self.token2idx['<'] = 1
+            self.token2idx['>'] = 2
 
         self.label2idx = defaultdict(int)
         self.len_dict = defaultdict(int)
@@ -188,7 +193,7 @@ class TweetPreprocessor:
                 fhw2.write('\n')
                 fhw2.write('###########################################################################')
                 fhw2.write('\n')
-                X_ids = self.update_char2idx(X_c)
+                X_ids = self.update_token2idx(X_c)
                 # _tmp = ','.join(X_ids)
                 if y_c is not None:
                     y_id = self.update_label2idx(y_c)
@@ -202,7 +207,7 @@ class TweetPreprocessor:
                 fhw1.write(self.datum_to_string(X_ids, y_id))
                 fhw1.write('\n')
 
-    def update_char2idx(self, tweet):
+    def update_token2idx(self, tweet):
 
         if tweet is None:
             return None
@@ -214,10 +219,35 @@ class TweetPreprocessor:
 #         if len(tweet) <= 2:
 #             print tweet.encode('utf8')
 
-        for char in tweet:
-            if char not in self.char2idx:
-                self.char2idx[char] = len(self.char2idx) + 1
-            idx.append(str(self.char2idx[char]))
+        if self.word_level:
+            for char in tweet:
+                if char not in self.token2idx:
+                    self.token2idx[char] = len(self.token2idx) + 1
+                idx.append(str(self.token2idx[char]))
+        else:
+            index = 0
+            while index < len(tweet):
+                if tweet[index:index + len('__URL__')] == '__URL__':
+                    if '__URL__' not in self.token2idx:
+                        self.token2idx['__URL__'] = len(self.token2idx) + 1
+                    idx.append(str(self.token2idx['__URL__']))
+                    index = index + len('__URL__')
+                elif tweet[index:index + len('__USER_HANDLE__')] == '__USER_HANDLE__':
+                    if '__USER_HANDLE__' not in self.token2idx:
+                        self.token2idx['__USER_HANDLE__'] = len(self.token2idx) + 1
+                    idx.append(str(self.token2idx['__USER_HANDLE__']))
+                    index = index + len('__USER_HANDLE__')
+                elif tweet[index:index + len('__RT__')] == '__RT__':
+                    if '__RT__' not in self.token2idx:
+                        self.token2idx['__RT__'] = len(self.token2idx) + 1
+                    idx.append(str(self.token2idx['__RT__']))
+                    index = index + len('__RT__')
+                else:
+                    ch = tweet[index]
+                    if ch not in self.token2idx:
+                        self.token2idx[ch] = len(self.token2idx) + 1
+                    idx.append(str(self.token2idx[ch]))
+                    index += 1
 
         return idx
 
@@ -274,7 +304,7 @@ class TweetPreprocessor:
                     fhw2.write(line)
 
     def get_onehot_vectors(self):
-        W = np.zeros((len(self.char2idx) + 1, len(self.char2idx) + 1))
+        W = np.zeros((len(self.token2idx) + 1, len(self.token2idx) + 1))
         for ii in xrange(len(W)):
             W[ii][ii] = 1
         return W
@@ -285,19 +315,19 @@ class TweetPreprocessor:
         dim = emb_dim
         if embeddings_file is not None:
             unicode_chars, unicode_embs = pickle.load(open(embeddings_file, "rb"))
-            unicode_char2idx = {v:k for k, v in enumerate(unicode_chars)}
+            unicode_token2idx = {v:k for k, v in enumerate(unicode_chars)}
             dim = len(unicode_embs[0])
-        W = np.zeros((len(self.char2idx) + 1, dim))
-        for ch in self.char2idx:
+        W = np.zeros((len(self.token2idx) + 1, dim))
+        for ch in self.token2idx:
             if unicode_chars is not None and ch in unicode_chars:
-                W[self.char2idx[ch]] = unicode_embs[unicode_char2idx[ch]]
+                W[self.token2idx[ch]] = unicode_embs[unicode_token2idx[ch]]
             else:
-                W[self.char2idx[ch]] = np.random.uniform(-0.25, 0.25, dim)
+                W[self.token2idx[ch]] = np.random.uniform(-0.25, 0.25, dim)
         W[0] = np.zeros(dim, dtype = 'float32')
         return W
 
     def print_stats(self):
-        print 'Number of unique characters: ', len(self.char2idx) + 1
+        print 'Number of unique characters: ', len(self.token2idx) + 1
         print 'Number of classes: ', len(self.label2idx)
         print 'Length distribution: ', self.len_dict
         print 'Class distribution: ', self.class2count
@@ -327,7 +357,7 @@ def main(args):
     else:
         W = tweet_preprocessor.get_dense_embeddings(args['embeddings_file'], args['emb_dim'])
     tweet_preprocessor.split_unlabeled_data(args['output_file_dir'], args['tweets_file'], split_ratio = 0.2)
-    pickle.dump([W, tweet_preprocessor.char2idx, tweet_preprocessor.label2idx, tweet_preprocessor.class_weights, tweet_preprocessor.max_len], open(os.path.join(args['output_file_dir'], 'dictionaries_' + time_stamp + '.p'), "wb"))
+    pickle.dump([W, tweet_preprocessor.token2idx, tweet_preprocessor.label2idx, tweet_preprocessor.class_weights, tweet_preprocessor.max_len], open(os.path.join(args['output_file_dir'], 'dictionaries_' + time_stamp + '.p'), "wb"))
 
 if __name__ == '__main__':
 
