@@ -330,7 +330,7 @@ class TweetPreprocessor:
         print 'Number of unique characters: ', len(self.token2idx) + 1
         print 'Number of classes: ', len(self.label2idx)
         print 'Length distribution: ', self.len_dict
-        print 'Class distribution: ', self.class2count
+        print 'Train set class distribution: ', self.class2count
 
 def main(args):
 

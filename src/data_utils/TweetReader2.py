@@ -1,6 +1,7 @@
 import numpy as np
 from keras.utils import np_utils
 import cPickle as pickle
+from sklearn.model_selection import StratifiedKFold
 import subprocess
 
 def parse_line(line, mode, max_len, nclasses):
@@ -10,7 +11,19 @@ def parse_line(line, mode, max_len, nclasses):
     indices = indices + [0 for _ in xrange(max_len - len(indices))]
     if mode == 'lm':
         X_c = np.asarray(indices[:-1])
-        y_c = np_utils.to_categorical(indices[1:], nclasses)
+        # y_c = np_utils.to_categorical(indices[1:], nclasses)
+        y_c = np.asarray(indices[1:])
+        '''
+        https://github.com/fchollet/keras/issues/483
+        The trick to fix issue with the error expecting a 3D input when using 
+        sparse_categorical_crossentropy is to format outputs in a sparse 3-dimensional way. 
+        So instead of formatting the output like this:
+        y_indices_naive = [1,5,4300,...]
+        is should be formatted this way:
+        y_indices_naive = [[1,], [5,] , [4300,],...]
+        That will make Keras happy and it'll trained the model as expected.        
+        '''
+        y_c = np.expand_dims(y_c, 1)
     elif mode == 'clf':
         X_c = np.asarray(indices)
         y_c = np_utils.to_categorical([int(x_y[1])], nclasses)[0]
@@ -114,18 +127,25 @@ class TweetCorpus:
         if unld_train_file is None:
             self.unld_tr_data = None
         else:
-            self.unld_tr_data = Generator(unld_train_file, 'lm', self.max_len, len(self.char2idx) + 1)
+            self.unld_tr_data = Corpus(unld_train_file, 'lm', self.max_len, len(self.char2idx) + 1)
+            # self.unld_tr_data = Generator(unld_train_file, 'lm', self.max_len, len(self.char2idx) + 1)
 
         if unld_val_file is None:
             self.unld_val_data = None
         else:
-            self.unld_val_data = Generator(unld_val_file, 'lm', self.max_len, len(self.char2idx) + 1)
-
-#         self.unld_tr_data = Corpus(unld_train_file, 'lm', self.max_len, len(self.char2idx) + 1)
-#         self.unld_val_data = Corpus(unld_val_file, 'lm', self.max_len, len(self.char2idx) + 1)
+            self.unld_val_data = Corpus(unld_val_file, 'lm', self.max_len, len(self.char2idx) + 1)
+            # self.unld_val_data = Generator(unld_val_file, 'lm', self.max_len, len(self.char2idx) + 1)
 
     def get_data_for_classification(self):
         return self.tr_data.X, self.val_data.X, self.te_data.X, self.tr_data.y, self.val_data.y, self.te_data.y
+
+    def get_data_for_cross_validation(self, folds = 3):
+        # combine X_train, X_val and use the combined dataset for cross validation
+        X_train = np.concatenate((self.tr_data.X, self.val_data.X), axis = 0)
+        y_train = np.concatenate((self.tr_data.y, self.val_data.y), axis = 0)
+        skf = StratifiedKFold(n_splits = folds)
+        for train_index, test_index in skf.split(X_train, np.argmax(y_train, axis = 1)):
+            yield X_train[train_index], X_train[test_index], y_train[train_index], y_train[test_index]
 
     def get_data_for_lm(self):
         return self.unld_tr_data.X, self.unld_val_data.X, self.unld_tr_data.y, self.unld_val_data.y

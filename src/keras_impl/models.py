@@ -82,7 +82,7 @@ class LanguageModel(object):
 
     def __init__(self, W, kwargs):
 
-        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'] - 1, weights = [W], mask_zero = True, trainable = kwargs['trainable'], name = 'embedding_layer1')
+        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'] - 1, weights = [W], mask_zero = True, trainable = kwargs['trainable'], name = 'embedding_layer')
 
         # lstm1 = LSTM(kwargs['lstm_hidden_dim'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm1')
 
@@ -92,9 +92,13 @@ class LanguageModel(object):
 
         self.lstm2 = LSTM(kwargs['lstm_hidden_dim'], return_sequences = True, name = 'lstm2')
 
-        self.dense1 = Dense(kwargs['dense_hidden_dim'], activation = 'relu', name = 'dense1')
+        # self.dense1 = Dense(kwargs['dense_hidden_dim'], activation = 'relu', name = 'dense1')
 
-        self.lm_op_layer = Dense(kwargs['nchars'], activation = 'softmax', name = 'lm_op_layer')
+        self.dense1 = TimeDistributed(Dense(kwargs['dense_hidden_dim'], activation = 'relu', name = 'dense1'))
+
+        # self.lm_op_layer = Dense(kwargs['nchars'], activation = 'softmax', name = 'lm_op_layer')
+
+        self.lm_op_layer = TimeDistributed(Dense(kwargs['nchars'], activation = 'softmax', name = 'lm_op_layer'))
 
         sequence_input = Input(shape = (kwargs['max_seq_len'] - 1,), dtype = 'int32')
 
@@ -118,9 +122,11 @@ class LanguageModel(object):
 
     def fit(self, corpus, args):
 
+        X_t, X_v, y_t, y_v = corpus.get_data_for_lm()
+
         opt = optimizers.Nadam()
 
-        self.model.compile(loss = 'categorical_crossentropy',
+        self.model.compile(loss = keras.losses.sparse_categorical_crossentropy,
                 optimizer = opt)
 
         self.model.summary()
@@ -131,19 +137,24 @@ class LanguageModel(object):
 
         model_checkpoint = ModelCheckpoint(bst_model_path, save_best_only = True, save_weights_only = True)
 
-        self.model.fit_generator(corpus.unld_tr_data.get_mini_batch(args['batch_size']),
-                            int(math.floor(corpus.unld_tr_data.wc / args['batch_size'])),
-                            epochs = 20,
-                            verbose = 2,
-                            callbacks = [early_stopping, model_checkpoint],
-                            validation_data = corpus.unld_val_data.get_mini_batch(args['batch_size']),
-                            validation_steps = int(math.floor(corpus.unld_val_data.wc / args['batch_size'])))
+#         self.model.fit_generator(corpus.unld_tr_data.get_mini_batch(args['batch_size']),
+#                             int(math.floor(corpus.unld_tr_data.wc / args['batch_size'])),
+#                             epochs = 20,
+#                             verbose = 2,
+#                             callbacks = [early_stopping, model_checkpoint],
+#                             validation_data = corpus.unld_val_data.get_mini_batch(args['batch_size']),
+#                             validation_steps = int(math.floor(corpus.unld_val_data.wc / args['batch_size'])))
+
+        self.model.fit([X_t], y_t, \
+                validation_data = ([X_v], y_v), \
+                epochs = 20, verbose = 2, batch_size = args['batch_size'], shuffle = True, \
+                callbacks = [early_stopping, model_checkpoint])
 
 class Classifier(object):
 
     def __init__(self, W, kwargs):
 
-        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], mask_zero = True, trainable = kwargs['trainable'], name = 'embedding_layer2')
+        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], mask_zero = True, trainable = kwargs['trainable'], name = 'embedding_layer')
 
         # lstm1 = LSTM(kwargs['lstm_hidden_dim'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm1')
 
@@ -191,7 +202,7 @@ class Classifier(object):
 
         # early_stopping = MyEarlyStopping(([X_val], y_val), patience = 5, verbose = 1)
 
-        bst_model_path = os.path.join(args['model_save_dir'], 'classifier_model.h5')
+        bst_model_path = os.path.join(args['model_save_dir'], 'classifier_model_' + args['ts'] + '.h5')
 
         # model_checkpoint = ModelCheckpoint(bst_model_path, save_best_only = True, save_weights_only = True)
 
@@ -214,7 +225,7 @@ class AutoEncoder(object):
 
     def __init__(self, W, kwargs):
 
-        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], mask_zero = True, trainable = kwargs['trainable'], name = 'embedding_layer3')
+        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], mask_zero = True, trainable = kwargs['trainable'], name = 'embedding_layer')
 
         self.lstm1 = LSTM(kwargs['lstm_hidden_dim'], return_sequences = True, name = 'lstm1')
 
@@ -281,7 +292,7 @@ class AutoEncoder_CNN(object):
 
     def __init__(self, W, kwargs):
 
-        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], trainable = kwargs['trainable'], name = 'embedding_layer4')
+        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], trainable = kwargs['trainable'], name = 'embedding_layer')
         self.conv1 = Conv1D(kwargs['nfeature_maps'], 7, activation = 'relu')  # number of filters, filter width
         self.max_pool1 = MaxPooling1D(pool_size = 3)
         self.conv2 = Conv1D(kwargs['nfeature_maps'], 7, activation = 'relu')  # number of filters, filter width

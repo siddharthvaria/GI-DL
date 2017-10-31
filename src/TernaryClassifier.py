@@ -3,7 +3,8 @@ from keras_impl.models import Classifier, LanguageModel
 from sklearn.metrics import classification_report
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
-
+import cPickle as pickle
+import datetime
 import numpy as np
 import argparse
 import os
@@ -115,6 +116,9 @@ def main(args):
     else:
         args['trainable'] = True
 
+    ts = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+    args['ts'] = ts
+
     print_hyper_params(args)
 
     if args['mode'] == 'lm':
@@ -135,14 +139,41 @@ def main(args):
     elif args['mode'] == 'clf':
         print 'Creating classifier model . . .'
         clf = Classifier(corpus.W, args)
+#         W_old = corpus.W
         # if the weights from the lm exists then use those weights instead
         if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], 'language_model.h5')):
             print 'Loading weights from trained language model . . .'
             clf.model.load_weights(os.path.join(args['model_save_dir'], 'language_model.h5'), by_name = True)
+
+        # make sure that Keras is replacing the embeddings with trained embeddings
+#         W_new = clf.embedding_layer.get_weights()[0]
+#         print 'shape(W_new): ', W_new.shape
+#         print 'np.sum: ', np.sum(W_old - W_new)  # np.sum should be much larger than 1
+
         print 'Training classifier model . . .'
         X_train, X_val, X_test, y_train, y_val, y_test = corpus.get_data_for_classification()
         y_pred = clf.fit(X_train, X_val, X_test, y_train, y_val, corpus.class_weights, args)
         print classification_report(np.argmax(y_test, axis = 1), y_pred, target_names = corpus.get_class_names())
+        pickle.dump([np.argmax(y_test, axis = 1), y_pred, corpus.get_class_names()], open(os.path.join(args['model_save_dir'], 'best_prediction_' + args['ts'] + '.p'), 'wb'))
+    elif args['mode'] == 'clf_cv':
+        # perform cross validation
+        y_pred_all = []
+        y_all = []
+        fold = 1
+        for X_train, X_val, y_train, y_val in corpus.get_data_for_cross_validation(3):
+            print 'Processing fold:', fold
+            fold += 1
+            clf = Classifier(corpus.W, args)
+            # if the weights from the lm exists then use those weights instead
+            if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], 'language_model.h5')):
+                print 'Loading weights from trained language model . . .'
+                clf.model.load_weights(os.path.join(args['model_save_dir'], 'language_model.h5'), by_name = True)
+            print 'Training classifier model . . .'
+            y_pred = clf.fit(X_train, X_val, X_val, y_train, y_val, corpus.class_weights, args)
+            y_pred_all.extend(y_pred)
+            y_all.extend(y_val)
+        print classification_report(np.argmax(y_all, axis = 1), y_pred_all, target_names = corpus.get_class_names())
+        pickle.dump([np.argmax(y_all, axis = 1), y_pred_all, corpus.get_class_names()], open(os.path.join(args['model_save_dir'], 'best_prediction_' + args['ts'] + '.p'), 'wb'))
     elif args['mode'] == 'analyze':
         print 'Analyzing embeddings . . .'
         # lm = LanguageModel(args)
@@ -154,7 +185,8 @@ def main(args):
 def parse_arguments():
 
     parser = argparse.ArgumentParser(description = '')
-
+    # even though short flags can be used in the command line, they can not be used to access the value of the arguments
+    # i.e args['pt'] will give KeyError.
     parser.add_argument('-tr', '--train_file', type = str)
     parser.add_argument('-val', '--val_file', type = str)
     parser.add_argument('-tst', '--test_file', type = str)
