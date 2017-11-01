@@ -176,6 +176,7 @@ class TweetPreprocessor:
             reader = unicode_csv_reader2(fhr, encoding, delimiter = delimiter)
             for row in reader:
                 line_count += 1
+                # print line_count
                 fhw2.write('###########################################################################')
                 fhw2.write('\n')
                 fhw2.write(row[text_column])
@@ -348,15 +349,17 @@ def main(args):
     tweet_preprocessor.read_data(args['output_file_dir'], args['val_file'], parse_line, 'text', 'label', 'utf8')
     print 'Processing test set . . .'
     tweet_preprocessor.read_data(args['output_file_dir'], args['test_file'], parse_line, 'text', 'label', 'utf8')
-    print 'Processing unlabeled set . . .'
-    tweet_preprocessor.read_data(args['output_file_dir'], args['tweets_file'], parse_line, 'text', '', 'utf8')
+    print 'Processing unlabeled train set . . .'
+    tweet_preprocessor.read_data(args['output_file_dir'], args['tweets_file_tr'], parse_line, 'text', '', 'utf8')
+    print 'Processing unlabeled validation set . . .'
+    tweet_preprocessor.read_data(args['output_file_dir'], args['tweets_file_val'], parse_line, 'text', '', 'utf8')
     tweet_preprocessor.print_stats()
     tweet_preprocessor.get_class_weights()
     if args['use_one_hot']:
         W = tweet_preprocessor.get_onehot_vectors()
     else:
         W = tweet_preprocessor.get_dense_embeddings(args['embeddings_file'], args['emb_dim'])
-    tweet_preprocessor.split_unlabeled_data(args['output_file_dir'], args['tweets_file'], split_ratio = 0.2)
+    # tweet_preprocessor.split_unlabeled_data(args['output_file_dir'], args['tweets_file'], split_ratio = 0.2)
     pickle.dump([W, tweet_preprocessor.token2idx, tweet_preprocessor.label2idx, tweet_preprocessor.class_weights, tweet_preprocessor.max_len], open(os.path.join(args['output_file_dir'], 'dictionaries_' + time_stamp + '.p'), "wb"))
 
 if __name__ == '__main__':
@@ -370,11 +373,13 @@ if __name__ == '__main__':
     parser.add_argument('-sch', '--stop_chars_file', type = str, default = None, help = 'file containing stop characters/words')
     parser.add_argument('-1h', '--use_one_hot', type = bool, default = False, help = 'If True, one hot vectors will be used instead of dense embeddings')
     parser.add_argument('-efile', '--embeddings_file', type = str, default = None, help = 'file containing pre-trained embeddings')
-    parser.add_argument('-unld', '--tweets_file', type = str, default = None, help = 'unlabeled tweets file')
+    # parser.add_argument('-unld', '--tweets_file', type = str, default = None, help = 'unlabeled tweets file')
+    parser.add_argument('-unld_tr', '--tweets_file_tr', type = str, default = None, help = 'unlabeled tweets file to be used for training')
+    parser.add_argument('-unld_val', '--tweets_file_val', type = str, default = None, help = 'unlabeled tweets file to be used for validation')
     parser.add_argument('-nor', '--normalize', type = bool, default = False, help = 'If True, the tweets will be normalized. Check "preprocess" method')
     parser.add_argument('-wl', '--word_level', type = bool, default = False, help = 'If True, tweets will be processed at word level otherwise at char level')
     parser.add_argument('-amrks', '--add_ss_markers', type = bool, default = False, help = 'If True, start and stop markers will be added to the tweets')
-    parser.add_argument('-edim', '--emb_dim', type = int, default = 128, help = 'embedding dimension')
+    parser.add_argument('-edim', '--emb_dim', type = int, default = 256, help = 'embedding dimension')
 
     args = vars(parser.parse_args())
 
