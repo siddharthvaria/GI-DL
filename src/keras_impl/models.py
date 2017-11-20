@@ -1,16 +1,15 @@
+from keras import optimizers
 import keras
+from keras.callbacks import Callback
+from keras.callbacks import EarlyStopping, ModelCheckpoint
+from keras.layers import Conv1D
 from keras.layers import Dropout
 from keras.layers import Input, Embedding, LSTM, Dense, Lambda, RepeatVector
-from keras.layers.convolutional import Conv1D
-from keras.layers.pooling import MaxPooling1D
+from keras.layers import MaxPooling1D, GlobalMaxPooling1D, concatenate
 from keras.layers.wrappers import TimeDistributed
 from keras.models import Model
-from keras.callbacks import EarlyStopping, ModelCheckpoint
-from keras import optimizers
-from keras.callbacks import Callback
-from sklearn.metrics import f1_score, accuracy_score
-
 import os, math, numpy as np
+from sklearn.metrics import f1_score, accuracy_score
 
 class MyCallback(Callback):
     """
@@ -74,7 +73,7 @@ class MyCallback(Callback):
         if self.stopped_epoch > 0 and self.verbose > 0:
             print('Early stopping . . .')
 
-class LanguageModel(object):
+class LSTMLanguageModel(object):
 
     '''
     Wrapper class around Keras Model API
@@ -133,7 +132,7 @@ class LanguageModel(object):
 
         early_stopping = EarlyStopping(monitor = 'val_loss', patience = 3)
 
-        bst_model_path = os.path.join(args['model_save_dir'], 'language_model.h5')
+        bst_model_path = os.path.join(args['model_save_dir'], 'lstm_language_model.h5')
 
         model_checkpoint = ModelCheckpoint(bst_model_path, save_best_only = True, save_weights_only = True)
 
@@ -150,7 +149,69 @@ class LanguageModel(object):
                 epochs = 20, verbose = 2, batch_size = args['batch_size'], shuffle = True, \
                 callbacks = [early_stopping, model_checkpoint])
 
-class Classifier(object):
+class CNNClassifier(object):
+
+    def __init__(self, W, kwargs):
+        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), weights = [W], mask_zero = True, trainable = kwargs['trainable'], name = 'embedding_layer')
+
+        self.conv_ls = []
+        for ksz in kwargs['kernel_sizes']:
+            self.conv_ls.append(Conv1D(kwargs['fmaps'], ksz, name = 'conv' + str(ksz)))
+
+        self.dense1 = Dense(kwargs['dense_hidden_dim'], activation = 'relu', name = 'dense1')
+
+        self.clf_op_layer = Dense(kwargs['nclasses'], activation = 'softmax', name = 'clf_op_layer')
+
+        sequence_input = Input(shape = (kwargs['max_seq_len'],), dtype = 'int32')
+
+        embedded_sequences = self.embedding_layer(sequence_input)
+
+        embedded_sequences = Dropout(kwargs['dropout'])(embedded_sequences)
+
+        conv_mxp_ops = []
+        for conv_l in self.conv_ls:
+            conv_mxp_ops.append(Dropout(kwargs['dropout'])(GlobalMaxPooling1D(conv_l(embedded_sequences))))
+
+        conv_op = concatenate(conv_mxp_ops, axis = 1)
+
+        dense_op = self.dense1(conv_op)
+
+        clf_op = self.clf_op_layer(dense_op)
+
+        self.model = Model(inputs = [sequence_input], outputs = clf_op)
+
+    def fit(self, X_train, X_val, X_test, y_train, y_val, class_weights, args):
+
+        opt = optimizers.Nadam()
+
+        self.model.compile(loss = 'categorical_crossentropy',
+                optimizer = opt,
+                metrics = ['acc'])
+
+        self.model.summary()
+
+        # early_stopping = MyEarlyStopping(([X_val], y_val), patience = 5, verbose = 1)
+
+        bst_model_path = os.path.join(args['model_save_dir'], 'cnn_classifier_model_' + args['ts'] + '.h5')
+
+        # model_checkpoint = ModelCheckpoint(bst_model_path, save_best_only = True, save_weights_only = True)
+
+        callback = MyCallback(([X_val], y_val), bst_model_path, patience = 5, verbose = 1, save_best_only = True, save_weights_only = True)
+
+        hist = self.model.fit([X_train], y_train, \
+                validation_data = None, \
+                epochs = args['n_epochs'], verbose = 2, batch_size = args['batch_size'], shuffle = True, \
+                callbacks = [callback], class_weight = class_weights)
+
+        self.model.load_weights(bst_model_path)
+
+        # bst_val_score = min(hist.history['val_loss'])
+
+        preds = self.model.predict([X_test], batch_size = args['batch_size'], verbose = 2)
+
+        return np.argmax(preds, axis = 1)
+
+class LSTMClassifier(object):
 
     def __init__(self, W, kwargs):
 
@@ -202,7 +263,7 @@ class Classifier(object):
 
         # early_stopping = MyEarlyStopping(([X_val], y_val), patience = 5, verbose = 1)
 
-        bst_model_path = os.path.join(args['model_save_dir'], 'classifier_model_' + args['ts'] + '.h5')
+        bst_model_path = os.path.join(args['model_save_dir'], 'lstm_classifier_model_' + args['ts'] + '.h5')
 
         # model_checkpoint = ModelCheckpoint(bst_model_path, save_best_only = True, save_weights_only = True)
 

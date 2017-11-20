@@ -41,7 +41,7 @@ class TweetClassifier(nn.Module):
         emb = self.encoder(inp.t())
 #         print 'emb.size(): ', emb.size()
         emb = self.drop(emb)
-        # output (seq_len, batch, hidden_size * num_directions): tensor containing the
+	# output (seq_len, batch, hidden_size * num_directions): tensor containing the
         # output features (h_t) from the last layer of the RNN, for each t.
         # output, hidden = self.lstm(emb.view(self.max_seq_len, self.batch_size, -1), hidden)
         output, hidden = self.lstm(emb, hidden)

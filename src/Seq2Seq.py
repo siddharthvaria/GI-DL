@@ -26,8 +26,8 @@ def generate_text(model, corpus, args):
     for x_in, x_out in zip(X_in, X_out):
 
         print '#########################################################'
-        print(''.join([corpus.idx2char[idx].encode('utf8') for idx in x_in]))
-        print(''.join([corpus.idx2char[idx].encode('utf8') for idx in x_out]))
+        print(' '.join([corpus.idx2char[idx].encode('utf8') for idx in x_in]))
+        print(' '.join([corpus.idx2char[idx].encode('utf8') for idx in x_out]))
         print '#########################################################'
 
 def main(args):
@@ -47,13 +47,13 @@ def main(args):
 
     if args['mode'] == 'seq2seq':
         print 'Creating Autoencoder model . . .'
-        # ae = AutoEncoder(corpus.W, args)
-        ae = AutoEncoder_CNN(corpus.W, args)
+        ae = AutoEncoder(corpus.W, args)
+        # ae = AutoEncoder_CNN(corpus.W, args)
         print 'Training Autoencoder model . . .'
-        ae.fit(corpus, args)
-        if os.path.isfile(os.path.join(args['model_save_dir'], 'cnn_autoencoder_model.h5')):
+        # ae.fit(corpus, args)
+        if os.path.isfile(os.path.join(args['model_save_dir'], 'autoencoder_model.h5')):
             print 'Loading weights from trained autoencoder model . . .'
-            ae.model.load_weights(os.path.join(args['model_save_dir'], 'cnn_autoencoder_model.h5'), by_name = True)
+            ae.model.load_weights(os.path.join(args['model_save_dir'], 'autoencoder_model.h5'), by_name = True)
         else:
             print 'No trained autoencoder model available . . .!'
             sys.exit(0)
@@ -74,9 +74,9 @@ def parse_arguments():
 
     parser = argparse.ArgumentParser(description = '')
 
-    parser.add_argument('train_file', type = str)
-    parser.add_argument('val_file', type = str)
-    parser.add_argument('test_file', type = str)
+    parser.add_argument('--train_file', type = str)
+    parser.add_argument('--val_file', type = str)
+    parser.add_argument('--test_file', type = str)
     parser.add_argument('dictionaries_file', type = str)
     parser.add_argument('model_save_dir', type = str)
     parser.add_argument('mode', type = str)

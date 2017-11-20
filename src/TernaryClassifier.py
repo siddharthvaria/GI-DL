@@ -1,13 +1,15 @@
-from data_utils.TweetReader2 import TweetCorpus
-from keras_impl.models import Classifier, LanguageModel
-from sklearn.metrics import classification_report
-from sklearn.manifold import TSNE
-import matplotlib.pyplot as plt
-import cPickle as pickle
-import datetime
-import numpy as np
 import argparse
+import datetime
 import os
+from sklearn.manifold import TSNE
+from sklearn.metrics import classification_report
+
+import cPickle as pickle
+from data_utils.TweetReader2 import TweetCorpus
+from keras_impl.models import LSTMClassifier, LSTMLanguageModel
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -123,7 +125,7 @@ def main(args):
 
     if args['mode'] == 'lm':
         print 'Creating language model . . .'
-        lm = LanguageModel(corpus.W, args)
+        lm = LSTMLanguageModel(corpus.W, args)
         print 'Training language model . . .'
         # train_lm(lm, corpus, args)
         lm.fit(corpus, args)
@@ -138,7 +140,7 @@ def main(args):
 
     elif args['mode'] == 'clf':
         print 'Creating classifier model . . .'
-        clf = Classifier(corpus.W, args)
+        clf = LSTMClassifier(corpus.W, args)
 #         W_old = corpus.W
         # if the weights from the lm exists then use those weights instead
         if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], 'language_model.h5')):
@@ -163,7 +165,7 @@ def main(args):
         for X_train, X_val, y_train, y_val in corpus.get_data_for_cross_validation(3):
             print 'Processing fold:', fold
             fold += 1
-            clf = Classifier(corpus.W, args)
+            clf = LSTMClassifier(corpus.W, args)
             # if the weights from the lm exists then use those weights instead
             if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], 'language_model.h5')):
                 print 'Loading weights from trained language model . . .'
@@ -177,7 +179,7 @@ def main(args):
     elif args['mode'] == 'analyze':
         print 'Analyzing embeddings . . .'
         # lm = LanguageModel(args)
-        clf = Classifier(args)
+        clf = LSTMClassifier(args)
         clf.model.load_weights(os.path.join(args['model_save_dir'], 'classifier_model.h5'), by_name = True)
         emb_matrix = clf.embedding_layer.get_weights()[0]
         vizualize_embeddings(emb_matrix, corpus.char2idx)
@@ -187,12 +189,14 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description = '')
     # even though short flags can be used in the command line, they can not be used to access the value of the arguments
     # i.e args['pt'] will give KeyError.
-    parser.add_argument('-tr', '--train_file', type = str)
-    parser.add_argument('-val', '--val_file', type = str)
-    parser.add_argument('-tst', '--test_file', type = str)
-    parser.add_argument('-dict', '--dictionaries_file', type = str)
-    parser.add_argument('model_save_dir', type = str)
-    parser.add_argument('mode', type = str)
+    requiredArgs = parser.add_argument_group('required arguments')
+    requiredArgs.add_argument('-tr', '--train_file', type = str, required = True, help = 'labeled train file')
+    requiredArgs.add_argument('-val', '--val_file', type = str, required = True, help = 'labeled validation file')
+    requiredArgs.add_argument('-tst', '--test_file', type = str, required = True, help = 'labeled test file')
+    requiredArgs.add_argument('-dict', '--dictionaries_file', type = str, required = True, help = 'pickled dictionary file')
+    requiredArgs.add_argument('-sdir', '--model_save_dir', type = str, required = True, help = 'directory where trained model should be saved')
+    requiredArgs.add_argument('-md', '--mode', type = str, required = True, help = 'mode (clf,clf_cv,lm)')
+    requiredArgs.add_argument('-ct', '--clf_type', type = str, required = True, help = 'when mode is clf or clf_cv, clf_type (lstm,cnn) indicates the type of classifier to use')
     parser.add_argument('-pt', '--pretrain', type = bool, default = False)
     parser.add_argument('-unld_tr', '--unld_train_file', type = str, default = None)
     parser.add_argument('-unld_val', '--unld_val_file', type = str, default = None)
