@@ -26,7 +26,7 @@ def parse_line(line, mode, max_len, nclasses):
         y_c = np.expand_dims(y_c, 1)
     elif mode == 'clf':
         X_c = np.asarray(indices)
-        y_c = np_utils.to_categorical([int(x_y[1])], nclasses)[0]
+        y_c = np_utils.to_categorical([int(x_y[1])], nclasses)
     elif mode == 'seq2seq':
         X_c = np.asarray(indices)
         y_c = np_utils.to_categorical(indices, nclasses)

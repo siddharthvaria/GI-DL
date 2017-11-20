@@ -95,7 +95,7 @@ def parse_line(line, text_column, label_column, max_len, stop_chars = None, norm
 
     # print line[text_column]
 
-    if line[text_column] in (None, '') or len(line[text_column]) < 2:
+    if line[text_column] in (None, ''):
         return None, None
 
     if word_level:
@@ -342,7 +342,7 @@ def main(args):
 
     time_stamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     stop_chars = read_stop_chars(args['stop_chars_file'])
-    tweet_preprocessor = TweetPreprocessor(stop_chars, time_stamp, max_len = 150, word_level = args['word_level'], normalize = args['normalize'], add_ss_markers = args['add_ss_markers'])
+    tweet_preprocessor = TweetPreprocessor(stop_chars, time_stamp, max_len = 53, word_level = args['word_level'], normalize = args['normalize'], add_ss_markers = args['add_ss_markers'])
     print 'Processing training set . . .'
     tweet_preprocessor.read_data(args['output_file_dir'], args['train_file'], parse_line, 'text', 'label', 'utf8', is_train = True)
     print 'Processing validation set . . .'

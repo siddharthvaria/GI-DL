@@ -6,7 +6,7 @@ from sklearn.metrics import classification_report
 
 import cPickle as pickle
 from data_utils.TweetReader2 import TweetCorpus
-from keras_impl.models import LSTMClassifier, LSTMLanguageModel
+from keras_impl.models import LSTMClassifier, LSTMLanguageModel, CNNClassifier
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -63,7 +63,6 @@ def print_hyper_params(args):
     print 'nchars: ', args['nchars']
     print 'n_epochs: ', args['n_epochs']
     print 'lstm_hidden_dim: ', args['lstm_hidden_dim']
-    print 'emb_dim: ', args['emb_dim']
     print 'dropout: ', args['dropout']
     print 'batch_size: ', args['batch_size']
     print 'trainable: ', args['trainable']
@@ -140,13 +139,17 @@ def main(args):
 
     elif args['mode'] == 'clf':
         print 'Creating classifier model . . .'
-        clf = LSTMClassifier(corpus.W, args)
-#         W_old = corpus.W
-        # if the weights from the lm exists then use those weights instead
-        if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], 'language_model.h5')):
-            print 'Loading weights from trained language model . . .'
-            clf.model.load_weights(os.path.join(args['model_save_dir'], 'language_model.h5'), by_name = True)
+        if args['clf_type'] == 'lstm':
+            clf = LSTMClassifier(corpus.W, args)
+            # if the weights from the lm exists then use those weights instead
+            if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], 'lstm_language_model.h5')):
+                print 'Loading weights from trained language model . . .'
+                clf.model.load_weights(os.path.join(args['model_save_dir'], 'lstm_language_model.h5'), by_name = True)
+        else:
+            args['kernel_sizes'] = [1, 3, 5]
+            clf = CNNClassifier(corpus.W, args)
 
+#         W_old = corpus.W
         # make sure that Keras is replacing the embeddings with trained embeddings
 #         W_new = clf.embedding_layer.get_weights()[0]
 #         print 'shape(W_new): ', W_new.shape
@@ -202,8 +205,8 @@ def parse_arguments():
     parser.add_argument('-unld_val', '--unld_val_file', type = str, default = None)
     parser.add_argument('-epochs', '--n_epochs', type = int, default = 50)
     parser.add_argument('-lstm_hd', '--lstm_hidden_dim', type = int, default = 256)
+    parser.add_argument('-nfmaps', '--nfeature_maps', type = int, default = 300)
     parser.add_argument('-dense_hd', '--dense_hidden_dim', type = int, default = 256)
-    parser.add_argument('-edim', '--emb_dim', type = int, default = 128)
     parser.add_argument('-do', '--dropout', type = float, default = 0.5)
     parser.add_argument('-bsz', '--batch_size', type = int, default = 64)
 

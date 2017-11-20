@@ -152,12 +152,13 @@ class LSTMLanguageModel(object):
 class CNNClassifier(object):
 
     def __init__(self, W, kwargs):
-        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), weights = [W], mask_zero = True, trainable = kwargs['trainable'], name = 'embedding_layer')
+        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], mask_zero = False, trainable = kwargs['trainable'], name = 'embedding_layer')
 
         self.conv_ls = []
         for ksz in kwargs['kernel_sizes']:
-            self.conv_ls.append(Conv1D(kwargs['fmaps'], ksz, name = 'conv' + str(ksz)))
+            self.conv_ls.append(Conv1D(kwargs['nfeature_maps'], ksz, name = 'conv' + str(ksz)))
 
+        self.mxp_l = GlobalMaxPooling1D()
         self.dense1 = Dense(kwargs['dense_hidden_dim'], activation = 'relu', name = 'dense1')
 
         self.clf_op_layer = Dense(kwargs['nclasses'], activation = 'softmax', name = 'clf_op_layer')
@@ -170,7 +171,10 @@ class CNNClassifier(object):
 
         conv_mxp_ops = []
         for conv_l in self.conv_ls:
-            conv_mxp_ops.append(Dropout(kwargs['dropout'])(GlobalMaxPooling1D(conv_l(embedded_sequences))))
+            _tmp_op = conv_l(embedded_sequences)
+            _tmp_op = self.mxp_l(_tmp_op)
+            _tmp_op = Dropout(kwargs['dropout'])(_tmp_op)
+            conv_mxp_ops.append(_tmp_op)
 
         conv_op = concatenate(conv_mxp_ops, axis = 1)
 
