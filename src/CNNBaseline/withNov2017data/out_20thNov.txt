@@ -1,0 +1,554 @@
+loading data...	
+data loaded!	
+vocab size: 	5639	
+vec size: 	300	
+==> fold 	1	
+Total err: 0.71525377984339	
+ConfusionMatrix:
+[[       6      23     174]   2.956% 	[class: 1]
+ [       9     153     329]   31.161% 	[class: 2]
+ [      45      86    2025]]  93.924% 	[class: 3]
+ + average row correct: 42.680164799094% 
+ + average rowUcol correct (VOC measure): 34.66369304806% 
+ + global correct: 76.631578947368%
+==> time to learn 1 batch = 8612.2387141943ms	
+ConfusionMatrix:
+[[       0       1      35]   0.000% 	[class: 1]
+ [       0      26      61]   29.885% 	[class: 2]
+ [       0       0     385]]  100.000% 	[class: 3]
+ + average row correct: 43.295018871625% 
+ + average rowUcol correct (VOC measure): 36.529011527697% 
+ + global correct: 80.905511811024%
+Total err: 0.59765532777065	
+time for one epoch: 	495567.82698631	ms	
+
+	
+epoch:	1	train perf:	76.631578947368	%, val perf 	80.905511811024	%	
+Total err: 0.51686542629367	
+ConfusionMatrix:
+[[      12      23     168]   5.911% 	[class: 1]
+ [       4     247     240]   50.305% 	[class: 2]
+ [       8      36    2112]]  97.959% 	[class: 3]
+ + average row correct: 51.392004142205% 
+ + average rowUcol correct (VOC measure): 44.287259876728% 
+ + global correct: 83.19298245614%
+==> time to learn 1 batch = 8566.286596204ms	
+ConfusionMatrix:
+[[       0       7      29]   0.000% 	[class: 1]
+ [       1      50      36]   57.471% 	[class: 2]
+ [       2      13     370]]  96.104% 	[class: 3]
+ + average row correct: 51.191719373067% 
+ + average rowUcol correct (VOC measure): 42.983731627464% 
+ + global correct: 82.677165354331%
+Total err: 0.53882731638086	
+time for one epoch: 	492904.06894684	ms	
+
+	
+epoch:	2	train perf:	83.19298245614	%, val perf 	82.677165354331	%	
+Total err: 0.4246590811868	
+ConfusionMatrix:
+[[      35      17     151]   17.241% 	[class: 1]
+ [      10     282     199]   57.434% 	[class: 2]
+ [      13      41    2102]]  97.495% 	[class: 3]
+ + average row correct: 57.390182216962% 
+ + average rowUcol correct (VOC measure): 50.243845582008% 
+ + global correct: 84.877192982456%
+==> time to learn 1 batch = 8582.4687267046ms	
+ConfusionMatrix:
+[[       1       2      33]   2.778% 	[class: 1]
+ [       2      34      51]   39.080% 	[class: 2]
+ [       0       2     383]]  99.481% 	[class: 3]
+ + average row correct: 47.11291945229% 
+ + average rowUcol correct (VOC measure): 40.552443638444% 
+ + global correct: 82.283464566929%
+Total err: 0.53485062870923	
+time for one epoch: 	493750.74410439	ms	
+
+	
+epoch:	3	train perf:	84.877192982456	%, val perf 	82.283464566929	%	
+Total err: 0.35688551829322	
+ConfusionMatrix:
+[[      54      17     132]   26.601% 	[class: 1]
+ [      12     323     156]   65.784% 	[class: 2]
+ [      16      31    2109]]  97.820% 	[class: 3]
+ + average row correct: 63.401711980502% 
+ + average rowUcol correct (VOC measure): 56.531791885694% 
+ + global correct: 87.228070175439%
+==> time to learn 1 batch = 8600.8870510465ms	
+ConfusionMatrix:
+[[       1       3      32]   2.778% 	[class: 1]
+ [       2      39      46]   44.828% 	[class: 2]
+ [       0       4     381]]  98.961% 	[class: 3]
+ + average row correct: 48.855467202763% 
+ + average rowUcol correct (VOC measure): 42.136785760522% 
+ + global correct: 82.874015748031%
+Total err: 0.48154348181927	
+time for one epoch: 	494904.91604805	ms	
+
+	
+epoch:	4	train perf:	87.228070175439	%, val perf 	82.874015748031	%	
+Total err: 0.28592576564229	
+ConfusionMatrix:
+[[      77      15     111]   37.931% 	[class: 1]
+ [       4     358     129]   72.912% 	[class: 2]
+ [      20      22    2114]]  98.052% 	[class: 3]
+ + average row correct: 69.631802042325% 
+ + average rowUcol correct (VOC measure): 63.318039973577% 
+ + global correct: 89.438596491228%
+==> time to learn 1 batch = 8613.1526631341ms	
+ConfusionMatrix:
+[[       7       3      26]   19.444% 	[class: 1]
+ [       6      56      25]   64.368% 	[class: 2]
+ [       8      13     364]]  94.545% 	[class: 3]
+ + average row correct: 59.452572464943% 
+ + average rowUcol correct (VOC measure): 50.618390738964% 
+ + global correct: 84.055118110236%
+Total err: 0.45430673963911	
+time for one epoch: 	495597.84197807	ms	
+
+	
+epoch:	5	train perf:	89.438596491228	%, val perf 	84.055118110236	%	
+Total err: 0.22720205474526	
+ConfusionMatrix:
+[[      96      16      91]   47.291% 	[class: 1]
+ [       6     398      87]   81.059% 	[class: 2]
+ [      12      22    2122]]  98.423% 	[class: 3]
+ + average row correct: 75.59090256691% 
+ + average rowUcol correct (VOC measure): 69.864029685656% 
+ + global correct: 91.789473684211%
+==> time to learn 1 batch = 8587.5775908562ms	
+ConfusionMatrix:
+[[       5       3      28]   13.889% 	[class: 1]
+ [       2      55      30]   63.218% 	[class: 2]
+ [       1      12     372]]  96.623% 	[class: 3]
+ + average row correct: 57.910219828288% 
+ + average rowUcol correct (VOC measure): 50.238331655661% 
+ + global correct: 85.03937007874%
+Total err: 0.45615907400612	
+time for one epoch: 	494126.07598305	ms	
+
+	
+epoch:	6	train perf:	91.789473684211	%, val perf 	85.03937007874	%	
+Total err: 0.17680598264858	
+ConfusionMatrix:
+[[     131      12      60]   64.532% 	[class: 1]
+ [       6     418      67]   85.132% 	[class: 2]
+ [      12      23    2121]]  98.377% 	[class: 3]
+ + average row correct: 82.680342594783% 
+ + average rowUcol correct (VOC measure): 77.215923865636% 
+ + global correct: 93.684210526316%
+==> time to learn 1 batch = 8577.0559824889ms	
+ConfusionMatrix:
+[[       2       5      29]   5.556% 	[class: 1]
+ [       2      57      28]   65.517% 	[class: 2]
+ [       0      13     372]]  96.623% 	[class: 3]
+ + average row correct: 55.898725117246% 
+ + average rowUcol correct (VOC measure): 47.903923938672% 
+ + global correct: 84.842519685039%
+Total err: 0.48020626604557	
+time for one epoch: 	493435.86707115	ms	
+
+	
+epoch:	7	train perf:	93.684210526316	%, val perf 	84.842519685039	%	
+Total err: 0.13733649812898	
+ConfusionMatrix:
+[[     143      15      45]   70.443% 	[class: 1]
+ [       7     442      42]   90.020% 	[class: 2]
+ [       7      10    2139]]  99.212% 	[class: 3]
+ + average row correct: 86.558405558268% 
+ + average rowUcol correct (VOC measure): 82.306961218516% 
+ + global correct: 95.578947368421%
+==> time to learn 1 batch = 8579.7775023836ms	
+ConfusionMatrix:
+[[       4       3      29]   11.111% 	[class: 1]
+ [       2      49      36]   56.322% 	[class: 2]
+ [       2       8     375]]  97.403% 	[class: 3]
+ + average row correct: 54.945183048646% 
+ + average rowUcol correct (VOC measure): 47.777777165174% 
+ + global correct: 84.251968503937%
+Total err: 0.51935665591026	
+time for one epoch: 	493593.70684624	ms	
+
+	
+epoch:	8	train perf:	95.578947368421	%, val perf 	84.251968503937	%	
+Total err: 0.10222006195402	
+ConfusionMatrix:
+[[     165       7      31]   81.281% 	[class: 1]
+ [       5     456      30]   92.872% 	[class: 2]
+ [       2      12    2142]]  99.351% 	[class: 3]
+ + average row correct: 91.167708237966% 
+ + average rowUcol correct (VOC measure): 88.200080394745% 
+ + global correct: 96.947368421053%
+==> time to learn 1 batch = 8575.3259721817ms	
+ConfusionMatrix:
+[[       4       3      29]   11.111% 	[class: 1]
+ [       3      53      31]   60.920% 	[class: 2]
+ [       3      10     372]]  96.623% 	[class: 3]
+ + average row correct: 56.218010435502% 
+ + average rowUcol correct (VOC measure): 48.706438392401% 
+ + global correct: 84.448818897638%
+Total err: 0.51471830012761	
+time for one epoch: 	493340.3429985	ms	
+
+	
+epoch:	9	train perf:	96.947368421053	%, val perf 	84.448818897638	%	
+Total err: 0.082566652813556	
+ConfusionMatrix:
+[[     177       7      19]   87.192% 	[class: 1]
+ [       4     464      23]   94.501% 	[class: 2]
+ [       6       5    2145]]  99.490% 	[class: 3]
+ + average row correct: 93.727644284566% 
+ + average rowUcol correct (VOC measure): 90.977942943573% 
+ + global correct: 97.754385964912%
+==> time to learn 1 batch = 8571.6990254021ms	
+ConfusionMatrix:
+[[       6       4      26]   16.667% 	[class: 1]
+ [       4      64      19]   73.563% 	[class: 2]
+ [       4      20     361]]  93.766% 	[class: 3]
+ + average row correct: 61.332040528456% 
+ + average rowUcol correct (VOC measure): 51.749170323213% 
+ + global correct: 84.842519685039%
+Total err: 0.52694779364612	
+time for one epoch: 	493129.75287437	ms	
+
+	
+epoch:	10	train perf:	97.754385964912	%, val perf 	84.842519685039	%	
+Total err: 0.067604812456655	
+ConfusionMatrix:
+[[     181       8      14]   89.163% 	[class: 1]
+ [       2     470      19]   95.723% 	[class: 2]
+ [       1       7    2148]]  99.629% 	[class: 3]
+ + average row correct: 94.838174184163% 
+ + average rowUcol correct (VOC measure): 92.958817879359% 
+ + global correct: 98.210526315789%
+==> time to learn 1 batch = 8561.6300600129ms	
+ConfusionMatrix:
+[[       5       3      28]   13.889% 	[class: 1]
+ [       5      57      25]   65.517% 	[class: 2]
+ [       5      14     366]]  95.065% 	[class: 3]
+ + average row correct: 58.157020807266% 
+ + average rowUcol correct (VOC measure): 49.746299535036% 
+ + global correct: 84.251968503937%
+Total err: 0.51485077039463	
+time for one epoch: 	492550.83298683	ms	
+
+	
+epoch:	11	train perf:	98.210526315789	%, val perf 	84.251968503937	%	
+Total err: 0.056400417540642	
+ConfusionMatrix:
+[[     193       3       7]   95.074% 	[class: 1]
+ [       2     475      14]   96.741% 	[class: 2]
+ [       3       3    2150]]  99.722% 	[class: 3]
+ + average row correct: 97.178979714712% 
+ + average rowUcol correct (VOC measure): 95.707221825918% 
+ + global correct: 98.877192982456%
+==> time to learn 1 batch = 8574.7000322223ms	
+ConfusionMatrix:
+[[       6       3      27]   16.667% 	[class: 1]
+ [       6      54      27]   62.069% 	[class: 2]
+ [       7       7     371]]  96.364% 	[class: 3]
+ + average row correct: 58.366421361764% 
+ + average rowUcol correct (VOC measure): 50.808415810267% 
+ + global correct: 84.842519685039%
+Total err: 0.54457252232109	
+time for one epoch: 	493301.38683319	ms	
+
+	
+epoch:	12	train perf:	98.877192982456	%, val perf 	84.842519685039	%	
+Total err: 0.050713264681943	
+ConfusionMatrix:
+[[     192       2       9]   94.581% 	[class: 1]
+ [       0     480      11]   97.760% 	[class: 2]
+ [       4       7    2145]]  99.490% 	[class: 3]
+ + average row correct: 97.276918093363% 
+ + average rowUcol correct (VOC measure): 95.776329437892% 
+ + global correct: 98.842105263158%
+==> time to learn 1 batch = 8561.1576496809ms	
+ConfusionMatrix:
+[[       5       3      28]   13.889% 	[class: 1]
+ [       4      54      29]   62.069% 	[class: 2]
+ [       5       8     372]]  96.623% 	[class: 3]
+ + average row correct: 57.527077198029% 
+ + average rowUcol correct (VOC measure): 50.125348816315% 
+ + global correct: 84.842519685039%
+Total err: 0.56830468985039	
+time for one epoch: 	492523.10609818	ms	
+
+	
+epoch:	13	train perf:	98.842105263158	%, val perf 	84.842519685039	%	
+Total err: 0.036868874857303	
+ConfusionMatrix:
+[[     196       4       3]   96.552% 	[class: 1]
+ [       0     484       7]   98.574% 	[class: 2]
+ [       1       3    2152]]  99.814% 	[class: 3]
+ + average row correct: 98.313510417938% 
+ + average rowUcol correct (VOC measure): 97.540277242661% 
+ + global correct: 99.368421052632%
+==> time to learn 1 batch = 8574.969662413ms	
+ConfusionMatrix:
+[[       5       3      28]   13.889% 	[class: 1]
+ [       2      56      29]   64.368% 	[class: 2]
+ [       5      10     370]]  96.104% 	[class: 3]
+ + average row correct: 58.120201031367% 
+ + average rowUcol correct (VOC measure): 50.44610525171% 
+ + global correct: 84.842519685039%
+Total err: 0.58582271494734	
+time for one epoch: 	493318.46404076	ms	
+
+	
+epoch:	14	train perf:	99.368421052632	%, val perf 	84.842519685039	%	
+Total err: 0.034047699059322	
+ConfusionMatrix:
+[[     197       2       4]   97.044% 	[class: 1]
+ [       2     483       6]   98.371% 	[class: 2]
+ [       0       2    2154]]  99.907% 	[class: 3]
+ + average row correct: 98.44074845314% 
+ + average rowUcol correct (VOC measure): 97.706433137258% 
+ + global correct: 99.438596491228%
+==> time to learn 1 batch = 8594.6116643091ms	
+ConfusionMatrix:
+[[       4       3      29]   11.111% 	[class: 1]
+ [       2      55      30]   63.218% 	[class: 2]
+ [       3      12     370]]  96.104% 	[class: 3]
+ + average row correct: 56.811132282019% 
+ + average rowUcol correct (VOC measure): 49.003665645917% 
+ + global correct: 84.448818897638%
+Total err: 0.61499716235897	
+time for one epoch: 	494448.4140873	ms	
+
+	
+epoch:	15	train perf:	99.438596491228	%, val perf 	84.448818897638	%	
+Total err: 0.026078604084669	
+ConfusionMatrix:
+[[     200       1       2]   98.522% 	[class: 1]
+ [       2     486       3]   98.982% 	[class: 2]
+ [       1       1    2154]]  99.907% 	[class: 3]
+ + average row correct: 99.137026071548% 
+ + average rowUcol correct (VOC measure): 98.447859287262% 
+ + global correct: 99.649122807018%
+==> time to learn 1 batch = 8585.3817980213ms	
+ConfusionMatrix:
+[[       4       3      29]   11.111% 	[class: 1]
+ [       2      54      31]   62.069% 	[class: 2]
+ [       3       8     374]]  97.143% 	[class: 3]
+ + average row correct: 56.774310519298% 
+ + average rowUcol correct (VOC measure): 49.634360273679% 
+ + global correct: 85.03937007874%
+Total err: 0.66010791473971	
+time for one epoch: 	493918.29705238	ms	
+
+	
+epoch:	16	train perf:	99.649122807018	%, val perf 	85.03937007874	%	
+Total err: 0.027207774773981	
+ConfusionMatrix:
+[[     199       2       2]   98.030% 	[class: 1]
+ [       0     487       4]   99.185% 	[class: 2]
+ [       1       2    2153]]  99.861% 	[class: 3]
+ + average row correct: 99.02524749438% 
+ + average rowUcol correct (VOC measure): 98.505526781082% 
+ + global correct: 99.614035087719%
+==> time to learn 1 batch = 8590.7844036445ms	
+ConfusionMatrix:
+[[       5       3      28]   13.889% 	[class: 1]
+ [       4      55      28]   63.218% 	[class: 2]
+ [       5      10     370]]  96.104% 	[class: 3]
+ + average row correct: 57.737058401108% 
+ + average rowUcol correct (VOC measure): 50.003779182831% 
+ + global correct: 84.645669291339%
+Total err: 0.59845982468504	
+time for one epoch: 	494229.55203056	ms	
+
+	
+epoch:	17	train perf:	99.614035087719	%, val perf 	84.645669291339	%	
+Total err: 0.021908272890651	
+ConfusionMatrix:
+[[     201       1       1]   99.015% 	[class: 1]
+ [       1     485       5]   98.778% 	[class: 2]
+ [       0       0    2156]]  100.000% 	[class: 3]
+ + average row correct: 99.264260133108% 
+ + average rowUcol correct (VOC measure): 98.943042755127% 
+ + global correct: 99.719298245614%
+==> time to learn 1 batch = 8586.1755387342ms	
+ConfusionMatrix:
+[[       5       3      28]   13.889% 	[class: 1]
+ [       4      57      26]   65.517% 	[class: 2]
+ [       5      11     369]]  95.844% 	[class: 3]
+ + average row correct: 58.416761954625% 
+ + average rowUcol correct (VOC measure): 50.533807526032% 
+ + global correct: 84.842519685039%
+Total err: 0.5933890954012	
+time for one epoch: 	493962.54706383	ms	
+
+	
+epoch:	18	train perf:	99.719298245614	%, val perf 	84.842519685039	%	
+Total err: 0.023613327323046	
+ConfusionMatrix:
+[[     197       3       3]   97.044% 	[class: 1]
+ [       2     486       3]   98.982% 	[class: 2]
+ [       0       3    2153]]  99.861% 	[class: 3]
+ + average row correct: 98.628954092662% 
+ + average rowUcol correct (VOC measure): 97.822666168213% 
+ + global correct: 99.508771929825%
+==> time to learn 1 batch = 8569.2374116025ms	
+ConfusionMatrix:
+[[       5       3      28]   13.889% 	[class: 1]
+ [       3      55      29]   63.218% 	[class: 2]
+ [       4      13     368]]  95.584% 	[class: 3]
+ + average row correct: 57.563898960749% 
+ + average rowUcol correct (VOC measure): 49.427962551514% 
+ + global correct: 84.251968503937%
+Total err: 0.62540443992521	
+time for one epoch: 	492988.61193657	ms	
+
+	
+epoch:	19	train perf:	99.508771929825	%, val perf 	84.251968503937	%	
+Total err: 0.018981912352083	
+ConfusionMatrix:
+[[     199       2       2]   98.030% 	[class: 1]
+ [       1     489       1]   99.593% 	[class: 2]
+ [       0       0    2156]]  100.000% 	[class: 3]
+ + average row correct: 99.207407236099% 
+ + average rowUcol correct (VOC measure): 98.866238196691% 
+ + global correct: 99.789473684211%
+==> time to learn 1 batch = 8569.9694213018ms	
+ConfusionMatrix:
+[[       5       3      28]   13.889% 	[class: 1]
+ [       4      59      24]   67.816% 	[class: 2]
+ [       5      14     366]]  95.065% 	[class: 3]
+ + average row correct: 58.923304080963% 
+ + average rowUcol correct (VOC measure): 50.531580299139% 
+ + global correct: 84.645669291339%
+Total err: 0.61207637237752	
+time for one epoch: 	493028.44882011	ms	
+
+	
+epoch:	20	train perf:	99.789473684211	%, val perf 	84.645669291339	%	
+Total err: 0.018086260095917	
+ConfusionMatrix:
+[[     201       1       1]   99.015% 	[class: 1]
+ [       1     488       2]   99.389% 	[class: 2]
+ [       2       2    2152]]  99.814% 	[class: 3]
+ + average row correct: 99.406083424886% 
+ + average rowUcol correct (VOC measure): 98.678004741669% 
+ + global correct: 99.684210526316%
+==> time to learn 1 batch = 8551.8196121542ms	
+ConfusionMatrix:
+[[       5       3      28]   13.889% 	[class: 1]
+ [       3      57      27]   65.517% 	[class: 2]
+ [       5      11     369]]  95.844% 	[class: 3]
+ + average row correct: 58.416761954625% 
+ + average rowUcol correct (VOC measure): 50.554305066665% 
+ + global correct: 84.842519685039%
+Total err: 0.64959846120181	
+time for one epoch: 	491985.41808128	ms	
+
+	
+epoch:	21	train perf:	99.684210526316	%, val perf 	84.842519685039	%	
+Total err: 0.015862973896535	
+ConfusionMatrix:
+[[     201       1       1]   99.015% 	[class: 1]
+ [       1     486       4]   98.982% 	[class: 2]
+ [       1       1    2154]]  99.907% 	[class: 3]
+ + average row correct: 99.301228920619% 
+ + average rowUcol correct (VOC measure): 98.76832763354% 
+ + global correct: 99.684210526316%
+==> time to learn 1 batch = 8569.7647593449ms	
+ConfusionMatrix:
+[[       5       3      28]   13.889% 	[class: 1]
+ [       3      59      25]   67.816% 	[class: 2]
+ [       5      13     367]]  95.325% 	[class: 3]
+ + average row correct: 59.009885787964% 
+ + average rowUcol correct (VOC measure): 50.811715672414% 
+ + global correct: 84.842519685039%
+Total err: 0.62523846562922	
+time for one epoch: 	493075.07514954	ms	
+
+	
+epoch:	22	train perf:	99.684210526316	%, val perf 	84.842519685039	%	
+Total err: 0.016073809403302	
+ConfusionMatrix:
+[[     201       1       1]   99.015% 	[class: 1]
+ [       0     490       1]   99.796% 	[class: 2]
+ [       0       2    2154]]  99.907% 	[class: 3]
+ + average row correct: 99.572783708572% 
+ + average rowUcol correct (VOC measure): 99.339900414149% 
+ + global correct: 99.824561403509%
+==> time to learn 1 batch = 8584.7550415031ms	
+ConfusionMatrix:
+[[       5       3      28]   13.889% 	[class: 1]
+ [       4      57      26]   65.517% 	[class: 2]
+ [       6      11     368]]  95.584% 	[class: 3]
+ + average row correct: 58.330182234446% 
+ + average rowUcol correct (VOC measure): 50.377363711596% 
+ + global correct: 84.645669291339%
+Total err: 0.6336040800716	
+time for one epoch: 	493887.07685471	ms	
+
+	
+epoch:	23	train perf:	99.824561403509	%, val perf 	84.645669291339	%	
+Total err: 0.01446597510625	
+ConfusionMatrix:
+[[     202       1       0]   99.507% 	[class: 1]
+ [       1     488       2]   99.389% 	[class: 2]
+ [       0       1    2155]]  99.954% 	[class: 3]
+ + average row correct: 99.616670608521% 
+ + average rowUcol correct (VOC measure): 99.28879737854% 
+ + global correct: 99.824561403509%
+==> time to learn 1 batch = 8581.1532173767ms	
+ConfusionMatrix:
+[[       5       3      28]   13.889% 	[class: 1]
+ [       2      55      30]   63.218% 	[class: 2]
+ [       4       9     372]]  96.623% 	[class: 3]
+ + average row correct: 57.910219828288% 
+ + average rowUcol correct (VOC measure): 50.477744390567% 
+ + global correct: 85.03937007874%
+Total err: 0.69590548842441	
+time for one epoch: 	493673.12407494	ms	
+
+	
+epoch:	24	train perf:	99.824561403509	%, val perf 	85.03937007874	%	
+Total err: 0.013028201873781	
+ConfusionMatrix:
+[[     201       1       1]   99.015% 	[class: 1]
+ [       0     489       2]   99.593% 	[class: 2]
+ [       1       0    2155]]  99.954% 	[class: 3]
+ + average row correct: 99.520353476206% 
+ + average rowUcol correct (VOC measure): 99.244795242945% 
+ + global correct: 99.824561403509%
+==> time to learn 1 batch = 8583.0152656505ms	
+ConfusionMatrix:
+[[       4       3      29]   11.111% 	[class: 1]
+ [       3      55      29]   63.218% 	[class: 2]
+ [       5      10     370]]  96.104% 	[class: 3]
+ + average row correct: 56.811132282019% 
+ + average rowUcol correct (VOC measure): 49.204118053118% 
+ + global correct: 84.448818897638%
+Total err: 0.6843103247834	
+time for one epoch: 	493781.26096725	ms	
+
+	
+epoch:	25	train perf:	99.824561403509	%, val perf 	84.448818897638	%	
+best dev err:	85.03937007874	%, epoch 	6	
+ConfusionMatrix:
+[[       5       3      28]   13.889% 	[class: 1]
+ [       2      55      30]   63.218% 	[class: 2]
+ [       1      12     372]]  96.623% 	[class: 3]
+ + average row correct: 57.910219828288% 
+ + average rowUcol correct (VOC measure): 50.238331655661% 
+ + global correct: 85.03937007874%
+Total err: 0.45615907400612	
+test perf 	85.03937007874	%	
+time for one fold: 	12343.400369644	ms	
+
+	
+saving checkpoint to 	results/20171120_2245_model_1.t7	
+dev scores:	
+{
+  1 : 0.8503937007874
+}
+average dev score: 	0.8503937007874	
+test scores:	
+{
+  1 : 0.8503937007874
+}
+average test score: 	0.8503937007874	
