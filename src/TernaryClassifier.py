@@ -6,10 +6,9 @@ from sklearn.metrics import classification_report
 
 import cPickle as pickle
 from data_utils.TweetReader2 import TweetCorpus
-from keras_impl.models import LSTMClassifier, LSTMLanguageModel, CNNClassifier
+from keras_impl.models import LSTMClassifier, LSTMLanguageModel, CNNClassifier, CNNLanguageModel
 import matplotlib.pyplot as plt
 import numpy as np
-
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -46,15 +45,6 @@ def generate_text(model, corpus, args):
             print(''.join([corpus.idx2char[idx] for idx in curr_sample]))
 
         print '##############################################'
-
-# def get_emb_matrix(corpus, emb_dim = 300):
-#
-#     emb_matrix = np.zeros((len(corpus.char2idx) + 1, emb_dim))
-#
-#     for i in xrange(1, emb_matrix.shape[0]):
-#         emb_matrix[i] = np.random.uniform(-0.25, 0.25, emb_dim)
-#
-#     return emb_matrix
 
 def print_hyper_params(args):
 
@@ -103,13 +93,14 @@ def vizualize_embeddings(emb_matrix, char2idx):
 
 def main(args):
 
-    # corpus = TweetCorpus(unlabeled_tweets_file = args['tweets_file'])
-    # corpus = TweetCorpus(args['train_file'], args['val_file'], args['test_file'], args['tweets_file'])
     corpus = TweetCorpus(args['train_file'], args['val_file'], args['test_file'], args['unld_train_file'], args['unld_val_file'], args['dictionaries_file'])
 
     args['max_seq_len'] = corpus.max_len
     args['nclasses'] = len(corpus.label2idx)
     args['nchars'] = len(corpus.char2idx) + 1
+
+    if args['arch_type'] == 'cnn':
+        args['kernel_sizes'] = [1, 2, 3, 4, 5]
 
     # check if W is one hot or dense
     if corpus.W[0][0] == 1:
@@ -123,31 +114,52 @@ def main(args):
     print_hyper_params(args)
 
     if args['mode'] == 'lm':
-        print 'Creating language model . . .'
-        lm = LSTMLanguageModel(corpus.W, args)
-        print 'Training language model . . .'
-        # train_lm(lm, corpus, args)
-        lm.fit(corpus, args)
-#         if os.path.isfile(os.path.join(args['model_save_dir'], 'language_model.h5')):
-#             print 'Loading weights from trained language model for text generation . . .'
-#             lm.load_weights(os.path.join(args['model_save_dir'], 'language_model.h5'), by_name = True)
-#         else:
-#             print 'No trained language model available . . .!'
-#             sys.exit(0)
-#         print 'Generating some fresh text . . .'
-#         generate_text(lm, corpus, args)
+        if args['arch_type'] == 'lstm':
+            # set the context size for lstm language model
+            args['truncate'] = False
+            args['context_size'] = -1
+            print 'Creating lstm language model . . .'
+            lm = LSTMLanguageModel(corpus.W, args)
+            print 'Training language model . . .'
+            lm.fit(corpus, args)
+        else:
+            # set the context size for cnn language model
+            args['truncate'] = True
+            args['context_size'] = 20
+            args['max_seq_len'] = args['context_size']
+            print 'Creating cnn language model . . .'
+            lm = CNNLanguageModel(corpus.W, args)
+            print 'Training language model . . .'
+            lm.fit(corpus, args)
+
+    elif args['mode'] == 'ds':
+        # pre-training via distant supervision
+
+        print 'Creating CNN classifier model for pre-training via  distant supervision . . .'
+        clf = clf = CNNClassifier(corpus.W, args)
+        print 'Training classifier model . . .'
+        # TODO: fix this hack (i.e getting data from the lm)
+        X_train, X_val, y_train, y_val = corpus.get_data_for_lm()
+        # use the validation itself as test set, 3rd argument to fit method below
+        y_pred = clf.fit(X_train, X_val, X_val, y_train, y_val, corpus.class_weights, args)
+        print classification_report(np.argmax(y_val, axis = 1), y_pred, target_names = corpus.get_class_names())
 
     elif args['mode'] == 'clf':
-        print 'Creating classifier model . . .'
-        if args['clf_type'] == 'lstm':
+        if args['arch_type'] == 'lstm':
+            print 'Creating LSTM classifier model . . .'
             clf = LSTMClassifier(corpus.W, args)
             # if the weights from the lm exists then use those weights instead
             if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], 'lstm_language_model.h5')):
                 print 'Loading weights from trained language model . . .'
                 clf.model.load_weights(os.path.join(args['model_save_dir'], 'lstm_language_model.h5'), by_name = True)
         else:
-            args['kernel_sizes'] = [1, 3, 5]
+            # args['kernel_sizes'] = [1, 2, 3, 4, 5]
+            print 'Creating CNN classifier model . . .'
             clf = CNNClassifier(corpus.W, args)
+            # if the weights from the pre-trained cnn exists then use those weights instead
+            if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], 'cnn_classifier_model_2017_11_23_15_14_40.h5')):
+                print 'Loading weights from trained CNN model . . .'
+                clf.model.load_weights(os.path.join(args['model_save_dir'], 'cnn_classifier_model_2017_11_23_15_14_40.h5'), by_name = True)
 
 #         W_old = corpus.W
         # make sure that Keras is replacing the embeddings with trained embeddings
@@ -168,11 +180,21 @@ def main(args):
         for X_train, X_val, y_train, y_val in corpus.get_data_for_cross_validation(3):
             print 'Processing fold:', fold
             fold += 1
-            clf = LSTMClassifier(corpus.W, args)
-            # if the weights from the lm exists then use those weights instead
-            if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], 'language_model.h5')):
-                print 'Loading weights from trained language model . . .'
-                clf.model.load_weights(os.path.join(args['model_save_dir'], 'language_model.h5'), by_name = True)
+            if args['arch_type'] == 'lstm':
+                print 'Creating LSTM classifier model . . .'
+                clf = LSTMClassifier(corpus.W, args)
+                # if the weights from the lm exists then use those weights instead
+                if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], 'lstm_language_model.h5')):
+                    print 'Loading weights from trained language model . . .'
+                    clf.model.load_weights(os.path.join(args['model_save_dir'], 'lstm_language_model.h5'), by_name = True)
+            else:
+                # args['kernel_sizes'] = [1, 2, 3, 4, 5]
+                print 'Creating CNN classifier model . . .'
+                clf = CNNClassifier(corpus.W, args)
+                # if the weights from the pre-trained cnn exists then use those weights instead
+                if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], 'cnn_classifier_model_2017_11_23_15_14_40.h5')):
+                    print 'Loading weights from trained CNN model . . .'
+                    clf.model.load_weights(os.path.join(args['model_save_dir'], 'cnn_classifier_model_2017_11_23_15_14_40.h5'), by_name = True)
             print 'Training classifier model . . .'
             y_pred = clf.fit(X_train, X_val, X_val, y_train, y_val, corpus.class_weights, args)
             y_pred_all.extend(y_pred)
@@ -199,13 +221,13 @@ def parse_arguments():
     requiredArgs.add_argument('-dict', '--dictionaries_file', type = str, required = True, help = 'pickled dictionary file')
     requiredArgs.add_argument('-sdir', '--model_save_dir', type = str, required = True, help = 'directory where trained model should be saved')
     requiredArgs.add_argument('-md', '--mode', type = str, required = True, help = 'mode (clf,clf_cv,lm)')
-    requiredArgs.add_argument('-ct', '--clf_type', type = str, required = True, help = 'when mode is clf or clf_cv, clf_type (lstm,cnn) indicates the type of classifier to use')
+    parser.add_argument('-at', '--arch_type', type = str, default = 'lstm', help = 'Type of architecture (lstm,cnn)')
     parser.add_argument('-pt', '--pretrain', type = bool, default = False)
     parser.add_argument('-unld_tr', '--unld_train_file', type = str, default = None)
     parser.add_argument('-unld_val', '--unld_val_file', type = str, default = None)
     parser.add_argument('-epochs', '--n_epochs', type = int, default = 50)
     parser.add_argument('-lstm_hd', '--lstm_hidden_dim', type = int, default = 256)
-    parser.add_argument('-nfmaps', '--nfeature_maps', type = int, default = 300)
+    parser.add_argument('-nfmaps', '--nfeature_maps', type = int, default = 200)
     parser.add_argument('-dense_hd', '--dense_hidden_dim', type = int, default = 256)
     parser.add_argument('-do', '--dropout', type = float, default = 0.5)
     parser.add_argument('-bsz', '--batch_size', type = int, default = 64)

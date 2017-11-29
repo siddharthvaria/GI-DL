@@ -1,21 +1,25 @@
-from data_utils.utils import unicode_csv_reader2
-from collections import defaultdict
-import os
-from cStringIO import StringIO
 import argparse
-import cPickle as pickle
-import datetime
-import numpy as np
-import string, re
-from random import randint
+from cStringIO import StringIO
 import codecs
-# from data_utils.preprocess import preprocess
+from collections import defaultdict
+import datetime
 from nltk.tokenize import TweetTokenizer
+import os
+from random import randint
+import string, re
 
+import cPickle as pickle
+from data_utils.utils import unicode_csv_reader2
+import numpy as np
+
+
+# from data_utils.preprocess import preprocess
 aggress = set(['aggress', 'insult', 'snitch', 'threat', 'brag', 'aod', 'aware', 'authority', 'trust', 'fight', 'pride', 'power', 'lyric'])
 loss = set(['loss', 'grief', 'death', 'sad', 'alone', 'reac', 'guns'])
-regex = re.compile('[%s]' % re.escape(string.punctuation))
-regex_digit = re.compile(r"[+-]?\d+(?:\.\d+)?")
+# string.punctuation : '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'
+# regex_punc = re.compile('[%s]' % re.escape(string.punctuation))
+regex_punc = re.compile('[\\!\\"\\$\\%\\&\\\'\\(\\)\\*\\+\\,\\-\\.\\/\\:\\;\\<\\=\\>\\?\\@\\[\\\\\\]\\^\\`\\{\\|\\}\\~]')
+# regex_digit = re.compile(r"[+-]?\d+(?:\.\d+)?")
 
 def get_delimiter(data_file):
     if data_file.endswith('.csv'):
@@ -35,23 +39,6 @@ def collapse_label(fine_grained):
 
     return 'other'
 
-# def preprocess(text):
-#     # replace all other white space with a single space
-#     text = re.sub('\s+', ' ', text)
-#     # remove emoji placeholders
-#     text = re.sub('(::emoji::)|#|', '', text.lower())
-#     # replace user handles with a constant
-#     text = re.sub('@[0-9a-zA-Z_]+', 'USER_HANDLE', text)
-#     # replace urls
-#     text = re.sub('https?://[a-zA-Z0-9_\./]*', 'URL', text)
-# #     # remove punctuations
-# #     text = regex.sub(' ', text)
-# #     # remove digits below
-# #     text = regex_digit.sub(' ', text)
-#     # remove extra white space due to above operations
-#     text = re.sub(' +', ' ', text)
-#     return text
-
 def preprocess(tweet, is_word_level = False):
     # replace all other white space with a single space
     tweet = re.sub('\s+', ' ', tweet)
@@ -69,7 +56,9 @@ def preprocess(tweet, is_word_level = False):
     tweet = re.sub('https?://[a-zA-Z0-9_\./]*', '__URL__', tweet)
     # replace retweet markers
     tweet = re.sub('RT', '__RT__', tweet)
-
+    # remove words containing digits
+    tweet = re.sub(r'#*\w*\d+(?:[\./:,\-]\d+)?\w*', '', tweet).strip()
+    tweet = regex_punc.sub('', tweet)
     # remove extra white space due to above operations
     tweet = re.sub(' +', ' ', tweet)
     return tweet
@@ -332,6 +321,9 @@ class TweetPreprocessor:
         print 'Number of classes: ', len(self.label2idx)
         print 'Length distribution: ', self.len_dict
         print 'Train set class distribution: ', self.class2count
+        print 'Vocabulary:'
+        for w in sorted(self.token2idx.keys()):
+            print w.encode('utf8')
 
 def main(args):
 
@@ -342,7 +334,12 @@ def main(args):
 
     time_stamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     stop_chars = read_stop_chars(args['stop_chars_file'])
-    tweet_preprocessor = TweetPreprocessor(stop_chars, time_stamp, max_len = 53, word_level = args['word_level'], normalize = args['normalize'], add_ss_markers = args['add_ss_markers'])
+    if args['word_level']:
+        max_len = 53
+    else:
+        max_len = 150
+
+    tweet_preprocessor = TweetPreprocessor(stop_chars, time_stamp, max_len = max_len, word_level = args['word_level'], normalize = args['normalize'], add_ss_markers = args['add_ss_markers'])
     print 'Processing training set . . .'
     tweet_preprocessor.read_data(args['output_file_dir'], args['train_file'], parse_line, 'text', 'label', 'utf8', is_train = True)
     print 'Processing validation set . . .'
@@ -353,7 +350,6 @@ def main(args):
     tweet_preprocessor.read_data(args['output_file_dir'], args['tweets_file_tr'], parse_line, 'text', '', 'utf8')
     print 'Processing unlabeled validation set . . .'
     tweet_preprocessor.read_data(args['output_file_dir'], args['tweets_file_val'], parse_line, 'text', '', 'utf8')
-    tweet_preprocessor.print_stats()
     tweet_preprocessor.get_class_weights()
     if args['use_one_hot']:
         W = tweet_preprocessor.get_onehot_vectors()
@@ -361,6 +357,7 @@ def main(args):
         W = tweet_preprocessor.get_dense_embeddings(args['embeddings_file'], args['emb_dim'])
     # tweet_preprocessor.split_unlabeled_data(args['output_file_dir'], args['tweets_file'], split_ratio = 0.2)
     pickle.dump([W, tweet_preprocessor.token2idx, tweet_preprocessor.label2idx, tweet_preprocessor.class_weights, tweet_preprocessor.max_len], open(os.path.join(args['output_file_dir'], 'dictionaries_' + time_stamp + '.p'), "wb"))
+    tweet_preprocessor.print_stats()
 
 if __name__ == '__main__':
 

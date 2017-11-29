@@ -1,33 +1,22 @@
-import numpy as np
 from keras.utils import np_utils
-import cPickle as pickle
 from sklearn.model_selection import StratifiedKFold
 import subprocess
+
+import cPickle as pickle
+import numpy as np
 
 def parse_line(line, mode, max_len, nclasses):
     x_y = line.split('<:>')
     indices = [int(ch) for ch in x_y[0].split(',')]
-    # indices = np.asarray([0 for _ in xrange(max_len - len(indices))] + indices)
-    indices = indices + [0 for _ in xrange(max_len - len(indices))]
     if mode == 'lm':
-        X_c = np.asarray(indices[:-1])
-        # y_c = np_utils.to_categorical(indices[1:], nclasses)
-        y_c = np.asarray(indices[1:])
-        '''
-        https://github.com/fchollet/keras/issues/483
-        The trick to fix issue with the error expecting a 3D input when using 
-        sparse_categorical_crossentropy is to format outputs in a sparse 3-dimensional way. 
-        So instead of formatting the output like this:
-        y_indices_naive = [1,5,4300,...]
-        is should be formatted this way:
-        y_indices_naive = [[1,], [5,] , [4300,],...]
-        That will make Keras happy and it'll trained the model as expected.        
-        '''
-        y_c = np.expand_dims(y_c, 1)
+        X_c = np.asarray(indices)
+        y_c = None
     elif mode == 'clf':
+        indices = [0 for _ in xrange(max_len - len(indices))] + indices
         X_c = np.asarray(indices)
         y_c = np_utils.to_categorical([int(x_y[1])], nclasses)
     elif mode == 'seq2seq':
+        indices = [0 for _ in xrange(max_len - len(indices))] + indices
         X_c = np.asarray(indices)
         y_c = np_utils.to_categorical(indices, nclasses)
     return X_c, y_c
@@ -127,14 +116,22 @@ class TweetCorpus:
         if unld_train_file is None:
             self.unld_tr_data = None
         else:
+            # TODO:
+            # Uncomment to pre-train a language model
             self.unld_tr_data = Corpus(unld_train_file, 'lm', self.max_len, len(self.char2idx) + 1)
             # self.unld_tr_data = Generator(unld_train_file, 'lm', self.max_len, len(self.char2idx) + 1)
+            # Uncomment to pre-train a classifier
+            # self.unld_tr_data = Corpus(unld_train_file, 'clf', self.max_len, len(self.label2idx))
 
         if unld_val_file is None:
             self.unld_val_data = None
         else:
+            # TODO:
+            # Uncomment to pre-train a language model
             self.unld_val_data = Corpus(unld_val_file, 'lm', self.max_len, len(self.char2idx) + 1)
             # self.unld_val_data = Generator(unld_val_file, 'lm', self.max_len, len(self.char2idx) + 1)
+            # Uncomment to pre-train a classifier
+            # self.unld_val_data = Corpus(unld_val_file, 'clf', self.max_len, len(self.label2idx))
 
     def get_data_for_classification(self):
         return self.tr_data.X, self.val_data.X, self.te_data.X, self.tr_data.y, self.val_data.y, self.te_data.y
@@ -147,8 +144,50 @@ class TweetCorpus:
         for train_index, test_index in skf.split(X_train, np.argmax(y_train, axis = 1)):
             yield X_train[train_index], X_train[test_index], y_train[train_index], y_train[test_index]
 
-    def get_data_for_lm(self):
-        return self.unld_tr_data.X, self.unld_val_data.X, self.unld_tr_data.y, self.unld_val_data.y
+    def flatten(self, X, context_size):
+        if X == None:
+            return None, None
+        X_tcs = []
+        y_tcs = []
+        for X_c in X:
+            # pad atleast context_size - 1 zeros in the beginning
+            X_c = X_c.tolist()
+            X_c = [0 for _ in xrange(context_size - 1)] + X_c
+            s = 0
+            while s + context_size < len(X_c):
+                X_tcs.append(X_c[s:s + context_size])
+                y_tcs.append(X_c[s + context_size])
+                s += 1
+
+        X_tcs = np.asarray(X_tcs)
+        y_tcs = np.asarray(y_tcs)
+        '''
+        https://github.com/fchollet/keras/issues/483
+        The trick to fix issue with the error expecting a 3D input when using
+        sparse_categorical_crossentropy is to format outputs in a sparse 3-dimensional way.
+        So instead of formatting the output like this:
+        y_indices_naive = [1,5,4300,...]
+        is should be formatted this way:
+        y_indices_naive = [[1,], [5,] , [4300,],...]
+        That will make Keras happy and it'll trained the model as expected.
+        '''
+        y_tcs = np.expand_dims(y_tcs, 1)
+        return X_tcs, y_tcs
+
+    def get_data_for_lm(self, truncate = False, context_size = 10):
+        if truncate:
+            # After truncation, X will have shape [-1, context_size] and y will have shape [-1,1]
+            X_tr, y_tr = self.flatten(self.unld_tr_data.X, context_size)
+            X_val, y_val = self.flatten(self.unld_val_data.X, context_size)
+            return X_tr, X_val, y_tr, y_val
+        else:
+            X_tr = self.unld_tr_data.X[:, :-1]
+            y_tr = self.unld_tr_data.X[:, 1:]
+            y_tr = np.expand_dims(y_tr, 2)
+            X_val = self.unld_val_data.X[:, :-1]
+            y_val = self.unld_val_data.X[:, 1:]
+            y_val = np.expand_dims(y_val, 2)
+            return X_tr, X_val, y_tr, y_val
 
     def get_class_names(self):
 
