@@ -32,7 +32,7 @@ def generate_text(model, corpus, args):
         for ii in xrange(len(start_seqs)):
 
             start_seq = start_seqs[ii]
-            curr_sample = [corpus.char2idx[ch] for ch in start_seq]
+            curr_sample = [corpus.token2idx[tk] for tk in start_seq]
 
             for _ in xrange(np.random.randint(80, 120)):
                 seq_in = np.asarray([0 for _ in xrange(args['max_seq_len'] - 1 - len(curr_sample))] + curr_sample)
@@ -50,20 +50,20 @@ def print_hyper_params(args):
 
     print 'max_seq_len: ', args['max_seq_len']
     print 'nclasses: ', args['nclasses']
-    print 'nchars: ', args['nchars']
+    print 'ntokens: ', args['ntokens']
     print 'n_epochs: ', args['n_epochs']
     print 'lstm_hidden_dim: ', args['lstm_hidden_dim']
     print 'dropout: ', args['dropout']
     print 'batch_size: ', args['batch_size']
     print 'trainable: ', args['trainable']
 
-def vizualize_embeddings(emb_matrix, char2idx):
+def vizualize_embeddings(emb_matrix, token2idx):
 
-    assert len(emb_matrix) == (len(char2idx) + 1), 'len(emb_matrix) != len(char2idx) + 1'
+    assert len(emb_matrix) == (len(token2idx) + 1), 'len(emb_matrix) != len(token2idx) + 1'
 
     unicode_chars = []
     unicode_embs = []
-    for i, ch in enumerate(char2idx.keys()):
+    for i, ch in enumerate(token2idx.keys()):
         print i, ch
         try:
             ch.encode('ascii')
@@ -97,7 +97,7 @@ def main(args):
 
     args['max_seq_len'] = corpus.max_len
     args['nclasses'] = len(corpus.label2idx)
-    args['nchars'] = len(corpus.char2idx) + 1
+    args['ntokens'] = len(corpus.token2idx) + 1  # +1 for the padding token
 
     if args['arch_type'] == 'cnn':
         args['kernel_sizes'] = [1, 2, 3, 4, 5]
@@ -207,7 +207,7 @@ def main(args):
         clf = LSTMClassifier(args)
         clf.model.load_weights(os.path.join(args['model_save_dir'], 'classifier_model.h5'), by_name = True)
         emb_matrix = clf.embedding_layer.get_weights()[0]
-        vizualize_embeddings(emb_matrix, corpus.char2idx)
+        vizualize_embeddings(emb_matrix, corpus.token2idx)
 
 def parse_arguments():
 
@@ -223,6 +223,7 @@ def parse_arguments():
     requiredArgs.add_argument('-md', '--mode', type = str, required = True, help = 'mode (clf,clf_cv,lm)')
     parser.add_argument('-at', '--arch_type', type = str, default = 'lstm', help = 'Type of architecture (lstm,cnn)')
     parser.add_argument('-pt', '--pretrain', type = bool, default = False)
+
     parser.add_argument('-unld_tr', '--unld_train_file', type = str, default = None)
     parser.add_argument('-unld_val', '--unld_val_file', type = str, default = None)
     parser.add_argument('-epochs', '--n_epochs', type = int, default = 50)

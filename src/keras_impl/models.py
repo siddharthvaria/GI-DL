@@ -80,7 +80,7 @@ class LSTMLanguageModel(object):
 
     def __init__(self, W, kwargs):
 
-        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'] - 1, weights = [W], mask_zero = True, trainable = kwargs['trainable'], name = 'embedding_layer')
+        self.embedding_layer = Embedding(kwargs['ntokens'], len(W[0]), input_length = kwargs['max_seq_len'] - 1, weights = [W], mask_zero = True, trainable = kwargs['trainable'], name = 'embedding_layer')
 
         # lstm1 = LSTM(kwargs['lstm_hidden_dim'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm1')
 
@@ -94,9 +94,9 @@ class LSTMLanguageModel(object):
 
         self.dense1 = TimeDistributed(Dense(kwargs['dense_hidden_dim'], activation = 'relu', name = 'dense1'))
 
-        # self.lm_op_layer = Dense(kwargs['nchars'], activation = 'softmax', name = 'lm_op_layer')
+        # self.lm_op_layer = Dense(kwargs['ntokens'], activation = 'softmax', name = 'lm_op_layer')
 
-        self.lm_op_layer = TimeDistributed(Dense(kwargs['nchars'], activation = 'softmax', name = 'lm_op_layer'))
+        self.lm_op_layer = TimeDistributed(Dense(kwargs['ntokens'], activation = 'softmax', name = 'lm_op_layer'))
 
         sequence_input = Input(shape = (kwargs['max_seq_len'] - 1,), dtype = 'int32')
 
@@ -152,7 +152,7 @@ class LSTMClassifier(object):
 
     def __init__(self, W, kwargs):
 
-        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], mask_zero = True, trainable = kwargs['trainable'], name = 'embedding_layer')
+        self.embedding_layer = Embedding(kwargs['ntokens'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], mask_zero = True, trainable = kwargs['trainable'], name = 'embedding_layer')
 
         # lstm1 = LSTM(kwargs['lstm_hidden_dim'], dropout = kwargs['dropout'], recurrent_dropout = kwargs['dropout'], return_sequences = True, name = 'lstm1')
 
@@ -222,7 +222,7 @@ class LSTMClassifier(object):
 class CNNLanguageModel(object):
 
     def __init__(self, W, kwargs):
-        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], mask_zero = False, trainable = kwargs['trainable'], name = 'embedding_layer')
+        self.embedding_layer = Embedding(kwargs['ntokens'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], mask_zero = False, trainable = kwargs['trainable'], name = 'embedding_layer')
 
         self.conv_ls = []
         for ksz in kwargs['kernel_sizes']:
@@ -231,7 +231,7 @@ class CNNLanguageModel(object):
         self.mxp_l = GlobalMaxPooling1D()
         self.dense1 = Dense(kwargs['dense_hidden_dim'], activation = 'relu', name = 'dense1')
 
-        self.clf_op_layer = Dense(kwargs['nchars'], activation = 'softmax', name = 'clf_op_layer')
+        self.clf_op_layer = Dense(kwargs['ntokens'], activation = 'softmax', name = 'clf_op_layer')
 
         sequence_input = Input(shape = (kwargs['max_seq_len'],), dtype = 'int32')
 
@@ -287,7 +287,7 @@ class CNNLanguageModel(object):
 class CNNClassifier(object):
 
     def __init__(self, W, kwargs):
-        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], mask_zero = False, trainable = kwargs['trainable'], name = 'embedding_layer')
+        self.embedding_layer = Embedding(kwargs['ntokens'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], mask_zero = False, trainable = kwargs['trainable'], name = 'embedding_layer')
 
         self.conv_ls = []
         for ksz in kwargs['kernel_sizes']:
@@ -354,7 +354,7 @@ class AutoEncoder(object):
 
     def __init__(self, W, kwargs):
 
-        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], mask_zero = True, trainable = kwargs['trainable'], name = 'embedding_layer')
+        self.embedding_layer = Embedding(kwargs['ntokens'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], mask_zero = True, trainable = kwargs['trainable'], name = 'embedding_layer')
 
         self.lstm1 = LSTM(kwargs['lstm_hidden_dim'], return_sequences = True, name = 'lstm1')
 
@@ -364,7 +364,7 @@ class AutoEncoder(object):
 
         # self.lstm4 = LSTM(kwargs['lstm_hidden_dim'], return_sequences = True, name = 'lstm4')
 
-        self.ae_op_layer = TimeDistributed(Dense(kwargs['nchars'], activation = 'softmax', name = 'ae_op_layer'))
+        self.ae_op_layer = TimeDistributed(Dense(kwargs['ntokens'], activation = 'softmax', name = 'ae_op_layer'))
 
         sequence_input = Input(shape = (kwargs['max_seq_len'],), dtype = 'int32')
 
@@ -421,7 +421,7 @@ class AutoEncoder_CNN(object):
 
     def __init__(self, W, kwargs):
 
-        self.embedding_layer = Embedding(kwargs['nchars'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], trainable = kwargs['trainable'], name = 'embedding_layer')
+        self.embedding_layer = Embedding(kwargs['ntokens'], len(W[0]), input_length = kwargs['max_seq_len'], weights = [W], trainable = kwargs['trainable'], name = 'embedding_layer')
         self.conv1 = Conv1D(kwargs['nfeature_maps'], 7, activation = 'relu')  # number of filters, filter width
         self.max_pool1 = MaxPooling1D(pool_size = 3)
         self.conv2 = Conv1D(kwargs['nfeature_maps'], 7, activation = 'relu')  # number of filters, filter width
@@ -431,7 +431,7 @@ class AutoEncoder_CNN(object):
         self.lstm1 = LSTM(kwargs['lstm_hidden_dim'], name = 'lstm1')  # part of encoder
         self.lstm2 = LSTM(kwargs['lstm_hidden_dim'], return_sequences = True, name = 'lstm2')  # part of decoder
         self.lstm3 = LSTM(kwargs['lstm_hidden_dim'], return_sequences = True, name = 'lstm3')  # part of decoder
-        self.ae_op_layer = TimeDistributed(Dense(kwargs['nchars'], activation = 'softmax', name = 'ae_op_layer'))
+        self.ae_op_layer = TimeDistributed(Dense(kwargs['ntokens'], activation = 'softmax', name = 'ae_op_layer'))
 
         sequence_input = Input(shape = (kwargs['max_seq_len'],), dtype = 'int32')
         embedded_sequences = self.embedding_layer(sequence_input)
