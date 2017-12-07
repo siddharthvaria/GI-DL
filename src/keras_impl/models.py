@@ -120,7 +120,7 @@ class LSTMLanguageModel(object):
 
     def fit(self, corpus, args):
 
-        X_t, X_v, y_t, y_v = corpus.get_data_for_lm(args['truncate'], args['context_size'])
+        X_t, X_v, y_t, y_v = corpus.get_data_for_lm()
 
         opt = optimizers.Nadam()
 
@@ -231,7 +231,7 @@ class CNNLanguageModel(object):
         self.mxp_l = GlobalMaxPooling1D()
         self.dense1 = Dense(kwargs['dense_hidden_dim'], activation = 'relu', name = 'dense1')
 
-        self.clf_op_layer = Dense(kwargs['ntokens'], activation = 'softmax', name = 'clf_op_layer')
+        self.lm_op_layer = Dense(kwargs['ntokens'], activation = 'softmax', name = 'lm_op_layer')
 
         sequence_input = Input(shape = (kwargs['max_seq_len'],), dtype = 'int32')
 
@@ -250,9 +250,9 @@ class CNNLanguageModel(object):
 
         dense_op = self.dense1(conv_op)
 
-        clf_op = self.clf_op_layer(dense_op)
+        lm_op = self.lm_op_layer(dense_op)
 
-        self.model = Model(inputs = [sequence_input], outputs = clf_op)
+        self.model = Model(inputs = [sequence_input], outputs = lm_op)
 
     def fit(self, corpus, args):
 

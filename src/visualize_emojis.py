@@ -1,11 +1,13 @@
 # from sklearn.manifold import TSNE
-import sys
-import numpy as np
 import os
-import matplotlib.pyplot as plt
-from sklearn.manifold import TSNE
-import cPickle as pickle
 from sklearn import decomposition
+from sklearn.manifold import TSNE
+import sys
+
+import cPickle as pickle
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 def vizualize_embeddings(unicode_embs, unicode_chars):
 
@@ -66,13 +68,13 @@ def dim_reduce(X):
 def write_emoji_embs(base_path, unicode_embs, unicode_chars):
     dimension = len(unicode_embs[0])
     print 'Dimension of embeddings: ', dimension
-    pickle.dump([unicode_chars, unicode_embs], open(os.path.join(base_path, 'emoji_embeddings_' + str(dimension) + '_.p'), "wb"))
+    pickle.dump([unicode_chars, unicode_embs], open(os.path.join(base_path, 'emoji_embeddings_' + str(dimension) + '.p'), "wb"))
     pass
 
 def main():
     fdir, fname = os.path.split(sys.argv[1])
     unicode_embs, unicode_chars = load_emoji2vec(sys.argv[1])
-    unicode_embs = dim_reduce(unicode_embs)
+    # unicode_embs = dim_reduce(unicode_embs)
     write_emoji_embs(fdir, unicode_embs, unicode_chars)
     vizualize_embeddings(unicode_embs, unicode_chars)
 

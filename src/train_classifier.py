@@ -52,7 +52,10 @@ def print_hyper_params(args):
     print 'nclasses: ', args['nclasses']
     print 'ntokens: ', args['ntokens']
     print 'n_epochs: ', args['n_epochs']
-    print 'lstm_hidden_dim: ', args['lstm_hidden_dim']
+    if args['arch_type'] == 'lstm':
+        print 'lstm_hidden_dim: ', args['lstm_hidden_dim']
+    else:
+        print 'nfeature_maps: ', args['nfeature_maps']
     print 'dropout: ', args['dropout']
     print 'batch_size: ', args['batch_size']
     print 'trainable: ', args['trainable']
@@ -93,7 +96,7 @@ def vizualize_embeddings(emb_matrix, token2idx):
 
 def main(args):
 
-    corpus = TweetCorpus(args['train_file'], args['val_file'], args['test_file'], args['unld_train_file'], args['unld_val_file'], args['dictionaries_file'])
+    corpus = TweetCorpus(args['arch_type'], args['train_file'], args['val_file'], args['test_file'], args['unld_train_file'], args['unld_val_file'], args['dictionaries_file'])
 
     args['max_seq_len'] = corpus.max_len
     args['nclasses'] = len(corpus.label2idx)
@@ -116,8 +119,6 @@ def main(args):
     if args['mode'] == 'lm':
         if args['arch_type'] == 'lstm':
             # set the context size for lstm language model
-            args['truncate'] = False
-            args['context_size'] = -1
             print 'Creating lstm language model . . .'
             lm = LSTMLanguageModel(corpus.W, args)
             print 'Training language model . . .'
@@ -131,35 +132,22 @@ def main(args):
             lm = CNNLanguageModel(corpus.W, args)
             print 'Training language model . . .'
             lm.fit(corpus, args)
-
-    elif args['mode'] == 'ds':
-        # pre-training via distant supervision
-
-        print 'Creating CNN classifier model for pre-training via  distant supervision . . .'
-        clf = clf = CNNClassifier(corpus.W, args)
-        print 'Training classifier model . . .'
-        # TODO: fix this hack (i.e getting data from the lm)
-        X_train, X_val, y_train, y_val = corpus.get_data_for_lm()
-        # use the validation itself as test set, 3rd argument to fit method below
-        y_pred = clf.fit(X_train, X_val, X_val, y_train, y_val, corpus.class_weights, args)
-        print classification_report(np.argmax(y_val, axis = 1), y_pred, target_names = corpus.get_class_names())
-
     elif args['mode'] == 'clf':
         if args['arch_type'] == 'lstm':
             print 'Creating LSTM classifier model . . .'
             clf = LSTMClassifier(corpus.W, args)
             # if the weights from the lm exists then use those weights instead
-            if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], 'lstm_language_model.h5')):
+            if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], args['pretrained_weights'])):
                 print 'Loading weights from trained language model . . .'
-                clf.model.load_weights(os.path.join(args['model_save_dir'], 'lstm_language_model.h5'), by_name = True)
+                clf.model.load_weights(os.path.join(args['model_save_dir'], args['pretrained_weights']), by_name = True)
         else:
             # args['kernel_sizes'] = [1, 2, 3, 4, 5]
             print 'Creating CNN classifier model . . .'
             clf = CNNClassifier(corpus.W, args)
             # if the weights from the pre-trained cnn exists then use those weights instead
-            if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], 'cnn_classifier_model_2017_11_23_15_14_40.h5')):
+            if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], args['pretrained_weights'])):
                 print 'Loading weights from trained CNN model . . .'
-                clf.model.load_weights(os.path.join(args['model_save_dir'], 'cnn_classifier_model_2017_11_23_15_14_40.h5'), by_name = True)
+                clf.model.load_weights(os.path.join(args['model_save_dir'], args['pretrained_weights']), by_name = True)
 
 #         W_old = corpus.W
         # make sure that Keras is replacing the embeddings with trained embeddings
@@ -222,7 +210,8 @@ def parse_arguments():
     requiredArgs.add_argument('-sdir', '--model_save_dir', type = str, required = True, help = 'directory where trained model should be saved')
     requiredArgs.add_argument('-md', '--mode', type = str, required = True, help = 'mode (clf,clf_cv,lm)')
     parser.add_argument('-at', '--arch_type', type = str, default = 'lstm', help = 'Type of architecture (lstm,cnn)')
-    parser.add_argument('-pt', '--pretrain', type = bool, default = False)
+    parser.add_argument('-pt', '--pretrain', type = bool, default = False, help = 'If this flag is True and if pretrained weights are provided, then they will be used to initialize the network')
+    parser.add_argument('-w', '--pretrained_weights', type = str, default = None, help = 'Path to pretrained weights file')
 
     parser.add_argument('-unld_tr', '--unld_train_file', type = str, default = None)
     parser.add_argument('-unld_val', '--unld_val_file', type = str, default = None)

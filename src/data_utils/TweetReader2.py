@@ -8,7 +8,11 @@ import numpy as np
 def parse_line(line, mode, max_len, nclasses):
     x_y = line.split('<:>')
     indices = [int(ch) for ch in x_y[0].split(',')]
-    if mode == 'lm':
+    if mode == 'lm_cnn':
+        X_c = np.asarray(indices)
+        y_c = None
+    elif mode == 'lm_lstm':
+        indices = [0 for _ in xrange(max_len - len(indices))] + indices
         X_c = np.asarray(indices)
         y_c = None
     elif mode == 'clf':
@@ -91,12 +95,14 @@ class Generator:
 
 class TweetCorpus:
 
-    def __init__(self, train_file = None, val_file = None, test_file = None, unld_train_file = None, unld_val_file = None, dictionaries_file = None):
+    def __init__(self, arch_type, train_file = None, val_file = None, test_file = None, unld_train_file = None, unld_val_file = None, dictionaries_file = None):
 
         self.W, self.token2idx, self.label2idx, self.class_weights, self.max_len = pickle.load(open(dictionaries_file, "rb"))
 
         self.idx2token = {v:k for k, v in self.token2idx.iteritems()}
         self.idx2token[0] = ''
+
+        self.arch_type = arch_type
 
         if train_file is None:
             self.tr_data = None
@@ -118,7 +124,7 @@ class TweetCorpus:
         else:
             # TODO:
             # Uncomment to pre-train a language model
-            self.unld_tr_data = Corpus(unld_train_file, 'lm', self.max_len, len(self.token2idx) + 1)
+            self.unld_tr_data = Corpus(unld_train_file, 'lm_' + self.arch_type, self.max_len, len(self.token2idx) + 1)
             # self.unld_tr_data = Generator(unld_train_file, 'lm', self.max_len, len(self.token2idx) + 1)
             # Uncomment to pre-train a classifier
             # self.unld_tr_data = Corpus(unld_train_file, 'clf', self.max_len, len(self.label2idx))
@@ -128,7 +134,7 @@ class TweetCorpus:
         else:
             # TODO:
             # Uncomment to pre-train a language model
-            self.unld_val_data = Corpus(unld_val_file, 'lm', self.max_len, len(self.token2idx) + 1)
+            self.unld_val_data = Corpus(unld_val_file, 'lm_' + self.arch_type, self.max_len, len(self.token2idx) + 1)
             # self.unld_val_data = Generator(unld_val_file, 'lm', self.max_len, len(self.token2idx) + 1)
             # Uncomment to pre-train a classifier
             # self.unld_val_data = Corpus(unld_val_file, 'clf', self.max_len, len(self.label2idx))

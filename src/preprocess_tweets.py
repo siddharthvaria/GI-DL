@@ -3,6 +3,7 @@ from cStringIO import StringIO
 import codecs
 from collections import defaultdict
 import datetime
+from gensim.models import KeyedVectors
 from nltk.tokenize import TweetTokenizer
 import os
 from random import randint
@@ -11,7 +12,6 @@ import string, re
 import cPickle as pickle
 from data_utils.utils import unicode_csv_reader2
 import numpy as np
-
 
 # from data_utils.preprocess import preprocess
 aggress = set(['aggress', 'insult', 'snitch', 'threat', 'brag', 'aod', 'aware', 'authority', 'trust', 'fight', 'pride', 'power', 'lyric'])
@@ -55,7 +55,7 @@ def preprocess(tweet, is_word_level = False):
     # replace urls
     tweet = re.sub('https?://[a-zA-Z0-9_\./]*', '__URL__', tweet)
     # replace retweet markers
-    tweet = re.sub('RT', '__RT__', tweet)
+    tweet = re.sub('^RT', '__RT__', tweet)
     # remove words containing digits
     tweet = re.sub(r'#*\w*\d+(?:[\./:,\-]\d+)?\w*', '', tweet).strip()
     tweet = regex_punc.sub('', tweet)
@@ -299,25 +299,47 @@ class TweetPreprocessor:
             W[ii][ii] = 1
         return W
 
-    def get_dense_embeddings(self, embeddings_file, emb_dim):
-        unicode_chars = None
+    def load_w2v(self, embedding_file):
+        word2vec = KeyedVectors.load_word2vec_format(embedding_file, binary = True)
+        print('Found %s word vectors of word2vec' % len(word2vec.vocab))
+        return word2vec
+
+    def get_dense_embeddings(self, w2v_file = None, emoji_file = None, emb_dim = 300):
+
+        # TODO: add an option to also load pre-trained emoji embeddings
+        w2v = None
+        if w2v_file is not None:
+            w2v = self.load_w2v(w2v_file)
+
+        unicode_tokens = None
         unicode_embs = None
-        dim = emb_dim
-        if embeddings_file is not None:
-            unicode_chars, unicode_embs = pickle.load(open(embeddings_file, "rb"))
-            unicode_token2idx = {v:k for k, v in enumerate(unicode_chars)}
-            dim = len(unicode_embs[0])
-        W = np.zeros((len(self.token2idx) + 1, dim))
-        for ch in self.token2idx:
-            if unicode_chars is not None and ch in unicode_chars:
-                W[self.token2idx[ch]] = unicode_embs[unicode_token2idx[ch]]
+        if emoji_file is not None:
+            unicode_tokens, unicode_embs = pickle.load(open(emoji_file, "rb"))
+            unicode_token2idx = {v:k for k, v in enumerate(unicode_tokens)}
+
+        W = np.zeros((len(self.token2idx) + 1, emb_dim))
+
+        w2v_miss_count = 0
+        emoji_miss_count = 0
+        for token in self.token2idx:
+            if w2v is not None and token in w2v.vocab:
+                W[self.token2idx[token]] = w2v.word_vec(token)
+            elif unicode_tokens is not None and token in unicode_tokens:
+                W[self.token2idx[token]] = unicode_embs[unicode_token2idx[token]]
+                w2v_miss_count += 1
             else:
-                W[self.token2idx[ch]] = np.random.uniform(-0.25, 0.25, dim)
-        W[0] = np.zeros(dim, dtype = 'float32')
+                w2v_miss_count += 1
+                emoji_miss_count += 1
+                W[self.token2idx[token]] = np.random.uniform(-0.25, 0.25, emb_dim)
+
+        W[0] = np.zeros(emb_dim, dtype = 'float32')
+
+        print 'Number of tokens in vocabulary:', len(self.token2idx.keys())
+        print 'Number of token embeddings found:', (len(self.token2idx.keys()) - w2v_miss_count)
+        print 'Number of emoji embeddings found:', (w2v_miss_count - emoji_miss_count)
         return W
 
     def print_stats(self):
-        print 'Number of unique characters: ', len(self.token2idx) + 1
         print 'Number of classes: ', len(self.label2idx)
         print 'Length distribution: ', self.len_dict
         print 'Train set class distribution: ', self.class2count
@@ -325,13 +347,14 @@ class TweetPreprocessor:
         for w in sorted(self.token2idx.keys()):
             print w.encode('utf8')
 
+def print_args(args):
+
+    for k, v in args.iteritems():
+        print k, v
+
 def main(args):
 
-    print 'Use_one_hot: ', args['use_one_hot']
-    print 'Normalize Tweets: ', args['normalize']
-    print 'Word_level: ', args['word_level']
-    print 'Add_ss_markers: ', args['add_ss_markers']
-
+    print_args(args)
     time_stamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     stop_chars = read_stop_chars(args['stop_chars_file'])
     if args['word_level']:
@@ -340,21 +363,26 @@ def main(args):
         max_len = 150
 
     tweet_preprocessor = TweetPreprocessor(stop_chars, time_stamp, max_len = max_len, word_level = args['word_level'], normalize = args['normalize'], add_ss_markers = args['add_ss_markers'])
-    print 'Processing training set . . .'
-    tweet_preprocessor.read_data(args['output_file_dir'], args['train_file'], parse_line, 'text', 'label', 'utf8', is_train = True)
-    print 'Processing validation set . . .'
-    tweet_preprocessor.read_data(args['output_file_dir'], args['val_file'], parse_line, 'text', 'label', 'utf8')
-    print 'Processing test set . . .'
-    tweet_preprocessor.read_data(args['output_file_dir'], args['test_file'], parse_line, 'text', 'label', 'utf8')
-    print 'Processing unlabeled train set . . .'
-    tweet_preprocessor.read_data(args['output_file_dir'], args['tweets_file_tr'], parse_line, 'text', '', 'utf8')
-    print 'Processing unlabeled validation set . . .'
-    tweet_preprocessor.read_data(args['output_file_dir'], args['tweets_file_val'], parse_line, 'text', '', 'utf8')
+    if args['train_file'] is not None:
+        print 'Processing training set . . .'
+        tweet_preprocessor.read_data(args['output_file_dir'], args['train_file'], parse_line, 'text', 'label', 'utf8', is_train = True)
+    if args['val_file'] is not None:
+        print 'Processing validation set . . .'
+        tweet_preprocessor.read_data(args['output_file_dir'], args['val_file'], parse_line, 'text', 'label', 'utf8')
+    if args['test_file'] is not None:
+        print 'Processing test set . . .'
+        tweet_preprocessor.read_data(args['output_file_dir'], args['test_file'], parse_line, 'text', 'label', 'utf8')
+    if args['tweets_file_tr'] is not None:
+        print 'Processing unlabeled train set . . .'
+        tweet_preprocessor.read_data(args['output_file_dir'], args['tweets_file_tr'], parse_line, 'text', 'label', 'utf8')
+    if args['tweets_file_val'] is not None:
+        print 'Processing unlabeled validation set . . .'
+        tweet_preprocessor.read_data(args['output_file_dir'], args['tweets_file_val'], parse_line, 'text', 'label', 'utf8')
     tweet_preprocessor.get_class_weights()
     if args['use_one_hot']:
         W = tweet_preprocessor.get_onehot_vectors()
     else:
-        W = tweet_preprocessor.get_dense_embeddings(args['embeddings_file'], args['emb_dim'])
+        W = tweet_preprocessor.get_dense_embeddings(args['w2v_file'], args['emoji_file'], args['emb_dim'])
     # tweet_preprocessor.split_unlabeled_data(args['output_file_dir'], args['tweets_file'], split_ratio = 0.2)
     pickle.dump([W, tweet_preprocessor.token2idx, tweet_preprocessor.label2idx, tweet_preprocessor.class_weights, tweet_preprocessor.max_len], open(os.path.join(args['output_file_dir'], 'dictionaries_' + time_stamp + '.p'), "wb"))
     tweet_preprocessor.print_stats()
@@ -369,14 +397,14 @@ if __name__ == '__main__':
 
     parser.add_argument('-sch', '--stop_chars_file', type = str, default = None, help = 'file containing stop characters/words')
     parser.add_argument('-1h', '--use_one_hot', type = bool, default = False, help = 'If True, one hot vectors will be used instead of dense embeddings')
-    parser.add_argument('-efile', '--embeddings_file', type = str, default = None, help = 'file containing pre-trained embeddings')
-    # parser.add_argument('-unld', '--tweets_file', type = str, default = None, help = 'unlabeled tweets file')
+    parser.add_argument('-wfile', '--w2v_file', type = str, default = None, help = 'file containing pre-trained word2vec embeddings')
+    parser.add_argument('-efile', '--emoji_file', type = str, default = None, help = 'file containing pre-trained emoji embeddings')
     parser.add_argument('-unld_tr', '--tweets_file_tr', type = str, default = None, help = 'unlabeled tweets file to be used for training')
     parser.add_argument('-unld_val', '--tweets_file_val', type = str, default = None, help = 'unlabeled tweets file to be used for validation')
     parser.add_argument('-nor', '--normalize', type = bool, default = False, help = 'If True, the tweets will be normalized. Check "preprocess" method')
     parser.add_argument('-wl', '--word_level', type = bool, default = False, help = 'If True, tweets will be processed at word level otherwise at char level')
     parser.add_argument('-amrks', '--add_ss_markers', type = bool, default = False, help = 'If True, start and stop markers will be added to the tweets')
-    parser.add_argument('-edim', '--emb_dim', type = int, default = 256, help = 'embedding dimension')
+    parser.add_argument('-edim', '--emb_dim', type = int, default = 300, help = 'embedding dimension')
 
     args = vars(parser.parse_args())
 
