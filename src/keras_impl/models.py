@@ -217,7 +217,7 @@ class LSTMClassifier(object):
 
         preds = self.model.predict([X_test], batch_size = args['batch_size'], verbose = 2)
 
-        return np.argmax(preds, axis = 1)
+        return preds
 
 class CNNLanguageModel(object):
 
@@ -348,7 +348,7 @@ class CNNClassifier(object):
 
         preds = self.model.predict([X_test], batch_size = args['batch_size'], verbose = 2)
 
-        return np.argmax(preds, axis = 1)
+        return preds
 
 class AutoEncoder(object):
 

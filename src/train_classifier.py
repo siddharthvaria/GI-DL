@@ -137,17 +137,17 @@ def main(args):
             print 'Creating LSTM classifier model . . .'
             clf = LSTMClassifier(corpus.W, args)
             # if the weights from the lm exists then use those weights instead
-            if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], args['pretrained_weights'])):
+            if args['pretrain']  and os.path.isfile(args['pretrained_weights']):
                 print 'Loading weights from trained language model . . .'
-                clf.model.load_weights(os.path.join(args['model_save_dir'], args['pretrained_weights']), by_name = True)
+                clf.model.load_weights(args['pretrained_weights'], by_name = True)
         else:
             # args['kernel_sizes'] = [1, 2, 3, 4, 5]
             print 'Creating CNN classifier model . . .'
             clf = CNNClassifier(corpus.W, args)
             # if the weights from the pre-trained cnn exists then use those weights instead
-            if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], args['pretrained_weights'])):
+            if args['pretrain']  and os.path.isfile(args['pretrained_weights']):
                 print 'Loading weights from trained CNN model . . .'
-                clf.model.load_weights(os.path.join(args['model_save_dir'], args['pretrained_weights']), by_name = True)
+                clf.model.load_weights(args['pretrained_weights'], by_name = True)
 
 #         W_old = corpus.W
         # make sure that Keras is replacing the embeddings with trained embeddings
@@ -157,12 +157,13 @@ def main(args):
 
         print 'Training classifier model . . .'
         X_train, X_val, X_test, y_train, y_val, y_test = corpus.get_data_for_classification()
-        y_pred = clf.fit(X_train, X_val, X_test, y_train, y_val, corpus.class_weights, args)
-        print classification_report(np.argmax(y_test, axis = 1), y_pred, target_names = corpus.get_class_names())
-        pickle.dump([np.argmax(y_test, axis = 1), y_pred, corpus.get_class_names()], open(os.path.join(args['model_save_dir'], 'best_prediction_' + args['ts'] + '.p'), 'wb'))
+        # preds are output class probabilities
+        preds = clf.fit(X_train, X_val, X_test, y_train, y_val, corpus.class_weights, args)
+        print classification_report(np.argmax(y_test, axis = 1), np.argmax(preds, axis = 1), target_names = corpus.get_class_names())
+        pickle.dump([np.argmax(y_test, axis = 1), np.argmax(preds, axis = 1), preds, corpus.get_class_names()], open(os.path.join(args['model_save_dir'], 'best_prediction_' + args['ts'] + '.p'), 'wb'))
     elif args['mode'] == 'clf_cv':
         # perform cross validation
-        y_pred_all = []
+        preds_all = []
         y_all = []
         fold = 1
         for X_train, X_val, y_train, y_val in corpus.get_data_for_cross_validation(3):
@@ -172,23 +173,23 @@ def main(args):
                 print 'Creating LSTM classifier model . . .'
                 clf = LSTMClassifier(corpus.W, args)
                 # if the weights from the lm exists then use those weights instead
-                if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], 'lstm_language_model.h5')):
+                if args['pretrain']  and os.path.isfile(args['pretrained_weights']):
                     print 'Loading weights from trained language model . . .'
-                    clf.model.load_weights(os.path.join(args['model_save_dir'], 'lstm_language_model.h5'), by_name = True)
+                    clf.model.load_weights(args['pretrained_weights'], by_name = True)
             else:
                 # args['kernel_sizes'] = [1, 2, 3, 4, 5]
                 print 'Creating CNN classifier model . . .'
                 clf = CNNClassifier(corpus.W, args)
                 # if the weights from the pre-trained cnn exists then use those weights instead
-                if args['pretrain']  and os.path.isfile(os.path.join(args['model_save_dir'], 'cnn_classifier_model_2017_11_23_15_14_40.h5')):
+                if args['pretrain']  and os.path.isfile(args['pretrained_weights']):
                     print 'Loading weights from trained CNN model . . .'
-                    clf.model.load_weights(os.path.join(args['model_save_dir'], 'cnn_classifier_model_2017_11_23_15_14_40.h5'), by_name = True)
+                    clf.model.load_weights(args['pretrained_weights'], by_name = True)
             print 'Training classifier model . . .'
-            y_pred = clf.fit(X_train, X_val, X_val, y_train, y_val, corpus.class_weights, args)
-            y_pred_all.extend(y_pred)
+            preds = clf.fit(X_train, X_val, X_val, y_train, y_val, corpus.class_weights, args)
+            preds_all.extend(preds)
             y_all.extend(y_val)
-        print classification_report(np.argmax(y_all, axis = 1), y_pred_all, target_names = corpus.get_class_names())
-        pickle.dump([np.argmax(y_all, axis = 1), y_pred_all, corpus.get_class_names()], open(os.path.join(args['model_save_dir'], 'best_prediction_' + args['ts'] + '.p'), 'wb'))
+        print classification_report(np.argmax(y_all, axis = 1), np.argmax(preds_all, axis = 1), target_names = corpus.get_class_names())
+        pickle.dump([np.argmax(y_all, axis = 1), np.argmax(preds_all, axis = 1), preds_all, corpus.get_class_names()], open(os.path.join(args['model_save_dir'], 'best_prediction_' + args['ts'] + '.p'), 'wb'))
     elif args['mode'] == 'analyze':
         print 'Analyzing embeddings . . .'
         # lm = LanguageModel(args)
@@ -220,7 +221,7 @@ def parse_arguments():
     parser.add_argument('-nfmaps', '--nfeature_maps', type = int, default = 200)
     parser.add_argument('-dense_hd', '--dense_hidden_dim', type = int, default = 256)
     parser.add_argument('-do', '--dropout', type = float, default = 0.5)
-    parser.add_argument('-bsz', '--batch_size', type = int, default = 64)
+    parser.add_argument('-bsz', '--batch_size', type = int, default = 256)
 
     args = vars(parser.parse_args())
 
