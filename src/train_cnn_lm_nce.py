@@ -266,7 +266,7 @@ def train_clf(sess, model, args, corpus):
 
     best_val_f = 0
     best_val_probabilities = None
-    patience = 3
+    patience = 5
 
     for epoch in xrange(args['n_epochs']):
         _tr_loss = 0
@@ -306,7 +306,7 @@ def train_clf(sess, model, args, corpus):
             best_val_probabilities = val_probabilities
             path = saver.save(sess, checkpoint_prefix, global_step = current_step)
             print("Saved model checkpoint to {}\n".format(path))
-            patience = 3
+            patience = 5
         else:
             patience -= 1
             print("\n")
