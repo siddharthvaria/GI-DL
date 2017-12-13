@@ -353,37 +353,46 @@ class TweetPreprocessor:
 #             print w.encode('utf8')
         print 'pad_token_idx:', self.pad_token_idx
         _token_lst = sorted(self.token2idx.items(), key = operator.itemgetter(1))
-        _rindx_map = {v:k for k, v in self.idx_map.iteritems()}
         for w, idx in _token_lst:
-            print w.encode('utf8'), idx, self.idx2c[_rindx_map[idx]]
+            print w.encode('utf8'), idx, self.counts[w]
 
     def remap(self, labeled_files, unlabeled_files):
 
-        if len(unlabeled_files) == 0:
+        if len(unlabeled_files + labeled_files) == 0:
             return
 
-        _token2idx = defaultdict(int)
-        self.idx2c = defaultdict(int)
+        _token2idx = {}
+        _counts = {}
+        _idx2c = defaultdict(int)
         for ifile in (labeled_files + unlabeled_files):
             with open(ifile, 'r') as fh:
                 for line in fh:
                     x_y = line.strip().split('<:>')
                     idx_lst = x_y[0].split(',')
                     for idx in idx_lst:
-                        self.idx2c[int(idx)] += 1
+                        _idx2c[int(idx)] += 1
                     # account for padding token
-                    self.idx2c[0] += max(0, self.max_len - len(idx_lst))
+                    _idx2c[0] += max(0, self.max_len - len(idx_lst))
 
-        s_idx2c = sorted(self.idx2c.items(), key = operator.itemgetter(1), reverse = True)
+        rare_words = set()
+        idx2c = {}
+        for k, v in _idx2c.iteritems():
+            if v > 1:
+                idx2c[k] = v
+            else:
+                rare_words.add(k)
+
+        s_idx2c = sorted(idx2c.items(), key = operator.itemgetter(1), reverse = True)
 
         # s_idx2c is a list of tuples
         # idx_map is a mapping from old index to new index
-        self.idx_map = {}
+        idx_map = {}
         wc = 0
         for t in s_idx2c:
-            self.idx_map[t[0]] = wc
+            idx_map[t[0]] = wc
             wc += 1
 
+        tweets_dropped = defaultdict(int)
         for ifile in (labeled_files + unlabeled_files):
             print 'Re-mapping file:', ifile
             fpath, fname = os.path.split(ifile)
@@ -393,22 +402,33 @@ class TweetPreprocessor:
                 for line in fhr:
                     x_y = line.strip().split('<:>')
                     idx_lst = x_y[0].split(',')
-                    new_idx_lst = [str(self.idx_map[int(idx)]) for idx in idx_lst]
+                    new_idx_lst = [str(idx_map[int(idx)]) for idx in idx_lst if int(idx) in idx_map]
+                    if len(new_idx_lst) == 0:
+                        tweets_dropped[fname] += 1
+                        continue
                     fhw.write(self.datum_to_string(new_idx_lst, x_y[1]))
                     fhw.write('\n')
 
         # save the updated idx for padding token. It will no longer be zero
-        self.pad_token_idx = self.idx_map[0]
+        self.pad_token_idx = idx_map[0]
         # update token2idx based on new mapping
         for token in self.token2idx.keys():
-            _token2idx[token] = self.idx_map[self.token2idx[token]]
+            if self.token2idx[token] in idx_map:
+                _token2idx[token] = idx_map[self.token2idx[token]]
+                _counts[token] = idx2c[self.token2idx[token]]
+
         self.token2idx = _token2idx
+        self.counts = _counts
+
         # delete old files
         for ifile in (labeled_files + unlabeled_files):
             try:
                 os.remove(ifile)
             except OSError:
                 pass
+
+        print 'Tweet drop statistics:'
+        print tweets_dropped
 
 def print_args(args):
 
@@ -455,7 +475,7 @@ def main(args):
     else:
         W = tweet_preprocessor.get_dense_embeddings(args['w2v_file'], args['emoji_file'], args['emb_dim'])
     # tweet_preprocessor.split_unlabeled_data(args['output_file_dir'], args['tweets_file'], split_ratio = 0.2)
-    pickle.dump([W, tweet_preprocessor.token2idx, tweet_preprocessor.label2idx, tweet_preprocessor.class_weights, tweet_preprocessor.max_len, tweet_preprocessor.pad_token_idx], open(os.path.join(args['output_file_dir'], 'dictionaries_' + time_stamp + '.p'), "wb"))
+    pickle.dump([W, tweet_preprocessor.token2idx, tweet_preprocessor.label2idx, tweet_preprocessor.counts, tweet_preprocessor.class_weights, tweet_preprocessor.max_len, tweet_preprocessor.pad_token_idx], open(os.path.join(args['output_file_dir'], 'dictionaries_' + time_stamp + '.p'), "wb"))
     tweet_preprocessor.print_stats()
 
 if __name__ == '__main__':
