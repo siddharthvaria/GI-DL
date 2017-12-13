@@ -1,5 +1,6 @@
 import argparse
 import datetime
+from numpy.random import choice
 import os
 import shutil
 from sklearn.metrics import classification_report
@@ -16,21 +17,91 @@ import tensorflow as tf
 # from tensorflow.contrib import learn
 # import cPickle as pickle
 # import matplotlib.pyplot as plt
+
+def get_ignore_list(corpus):
+    # ignore all stopwords, all special markers __rt__,__url__ etc
+    ignore_list = [corpus.pad_token_idx]  # for padding token
+    stopwords = ['you', 'to', 'a', 'the', 'and', 'my',
+                 'me', 'Im', 'on', 'be', 'u', 'My', 'it',
+                 'in', 'You', 'that', 'up', 'for', 'A',
+                 'get', 'of', 'this', 'The', 'with', 'is',
+                 'got', 'just', 'they', 'On', 'Me', 'so',
+                 'To', 'was', 'but', 'all', 'no', 'U', 'do',
+                 'know', 'not', 'we', 'i', 'Up', 'go',
+                 'It', 'Be', 'he', 'This', 'We', 'If', 'at', 'No',
+                 'when', 'That', 'In', 'its', 'what', 'n',
+                 'been', 'can', 'if', 'Its', 'da', 'how',
+                 'your', 'yall', 'want', 'Just', 'For', 'she', 'I',
+                 'a', 'about', 'an', 'are', 'as', 'at', 'be', 'by',
+                 'for', 'from', 'how', 'in', 'is', 'it', 'of', 'on',
+                 'or', 'that', 'the', 'this', 'to', 'was', 'what',
+                 'when', 'where', 'who', 'will', 'with', 'the']
+    ignore_list.append(corpus.token2idx['__USER_HANDLE__'])
+    ignore_list.append(corpus.token2idx['__RT__'])
+    ignore_list.append(corpus.token2idx['__URL__'])
+    for _word in stopwords:
+        if _word in corpus.token2idx:
+            ignore_list.append(corpus.token2idx[_word])
+
+    return ignore_list
+
+def get_y(X, corpus, ignore_list = None):
+    _y = []
+    for x in X:
+        if x in ignore_list:
+            continue
+        _y.append(x)
+
+    if len(_y) == 0:
+        return None
+
+    _cnts = []
+
+    _sum = 0
+    for _y_i in _y:
+        _cnt = corpus.counts[corpus.idx2token[_y_i]]
+        _sum += _cnt
+        _cnts.append(_cnt)
+
+    _cnts = [float(_cnt) / _sum for _cnt in _cnts]
+    rsample = choice(_y, max(0, corpus.max_len - len(_y)), p = _cnts)
+
+    return _y + rsample.tolist()
+
 def get_data(corpus):
+    ignore_list = get_ignore_list(corpus)
+
     X_tr = []
+    y_tr = []
     for X_c in corpus.unld_tr_data.X:
         _X_c = X_c.tolist()
-        X_c = [0 for _ in xrange(corpus.max_len - len(_X_c))] + _X_c
-        X_tr.append(X_c)
+        X_c = [corpus.pad_token_idx for _ in xrange(corpus.max_len - len(_X_c))] + _X_c
+        _y_tr = get_y(X_c, corpus, ignore_list = ignore_list)
+        if _y_tr is not None:
+            X_tr.append(X_c)
+            y_tr.append(_y_tr)
+
     X_tr = np.asarray(X_tr)
-    y_tr = np.copy(X_tr)
+    y_tr = np.asarray(y_tr)
+
     X_val = []
+    y_val = []
     for X_c in corpus.unld_val_data.X:
         _X_c = X_c.tolist()
-        X_c = [0 for _ in xrange(corpus.max_len - len(_X_c))] + _X_c
-        X_val.append(X_c)
+        X_c = [corpus.pad_token_idx for _ in xrange(corpus.max_len - len(_X_c))] + _X_c
+        _y_val = get_y(X_c, corpus, ignore_list = ignore_list)
+        if _y_val is not None:
+            X_val.append(X_c)
+            y_val.append(_y_val)
+
     X_val = np.asarray(X_val)
-    y_val = np.copy(X_val)
+    y_val = np.asarray(y_val)
+
+    print 'NCE LM training data stats:'
+    print 'X_tr.shape:', X_tr.shape
+    print 'X_val.shape:', X_val.shape
+    print 'y_tr.shape:', y_tr.shape
+    print 'y_val.shape:', y_val.shape
 
     return X_tr, y_tr, X_val, y_val
 
@@ -339,7 +410,7 @@ def main(args):
                                filter_sizes = [1, 2, 3, 4, 5],
                                num_filters = args['nfeature_maps'],
                                embeddings = corpus.W,
-                               num_sampled = 100)
+                               num_sampled = 200)
 
             print 'List of trainable variables:'
             for i in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES):
