@@ -98,7 +98,7 @@ class TweetCorpus:
 
     def __init__(self, arch_type, train_file = None, val_file = None, test_file = None, unld_train_file = None, unld_val_file = None, dictionaries_file = None):
 
-        self.W, self.token2idx, self.label2idx, self.class_weights, self.max_len, self.pad_token_idx = pickle.load(open(dictionaries_file, "rb"))
+        self.W, self.token2idx, self.label2idx, self.counts, self.class_weights, self.max_len, self.pad_token_idx = pickle.load(open(dictionaries_file, "rb"))
 
         self.idx2token = {v:k for k, v in self.token2idx.iteritems()}
         self.idx2token[self.pad_token_idx] = ''
