@@ -339,7 +339,7 @@ def main(args):
                                filter_sizes = [1, 2, 3, 4, 5],
                                num_filters = args['nfeature_maps'],
                                embeddings = corpus.W,
-                               num_sampled = 10)
+                               num_sampled = 100)
 
             print 'List of trainable variables:'
             for i in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES):
@@ -362,13 +362,12 @@ def parse_arguments():
     parser.add_argument('-tst', '--test_file', type = str, help = 'labeled test file')
     parser.add_argument('-dict', '--dictionaries_file', type = str, help = 'pickled dictionary file')
     parser.add_argument('-sdir', '--model_save_dir', type = str, help = 'directory where trained model should be saved')
-    parser.add_argument('-md', '--mode', type = str, help = 'mode (clf,clf_cv,lm)')
+    parser.add_argument('-md', '--mode', type = str, help = 'mode (clf,lm)')
     parser.add_argument('-w', '--pretrained_weights', type = str, default = None, help = 'Path to pretrained weights file')
     parser.add_argument('-unld_tr', '--unld_train_file', type = str, default = None)
     parser.add_argument('-unld_val', '--unld_val_file', type = str, default = None)
     parser.add_argument('-epochs', '--n_epochs', type = int, default = 30)
     parser.add_argument('-nfmaps', '--nfeature_maps', type = int, default = 200)
-    parser.add_argument('-dense_hd', '--dense_hidden_dim', type = int, default = 256)
     parser.add_argument('-do', '--dropout', type = float, default = 0.5)
     parser.add_argument('-bsz', '--batch_size', type = int, default = 64)
 
