@@ -14,7 +14,6 @@ import cPickle as pickle
 from data_utils.utils import unicode_csv_reader2
 import numpy as np
 
-
 # from data_utils.preprocess import preprocess
 aggress = set(['aggress', 'insult', 'snitch', 'threat', 'brag', 'aod', 'aware', 'authority', 'trust', 'fight', 'pride', 'power', 'lyric'])
 loss = set(['loss', 'grief', 'death', 'sad', 'alone', 'reac', 'guns'])
@@ -65,7 +64,7 @@ def preprocess(tweet, is_word_level = False):
     tweet = re.sub(' +', ' ', tweet)
     return tweet
 
-def parse_line(line, text_column, label_column, max_len, stop_chars = None, normalize = False, add_ss_markers = False, word_level = False):
+def parse_line(line, text_column, label_column, tweet_id_column, max_len, stop_chars = None, normalize = False, add_ss_markers = False, word_level = False):
 
     if add_ss_markers:
         # -4 to account for start and stop markers and spaces
@@ -75,7 +74,7 @@ def parse_line(line, text_column, label_column, max_len, stop_chars = None, norm
 
     # take line (dict) as input and return text along with label if label is present
     if line[text_column] in (None, ''):
-        return None, None
+        return None, None, line[tweet_id_column]
 
     if stop_chars is not None:
         line[text_column] = [ch for ch in line[text_column] if ch not in stop_chars]
@@ -87,7 +86,7 @@ def parse_line(line, text_column, label_column, max_len, stop_chars = None, norm
     # print line[text_column]
 
     if line[text_column] in (None, ''):
-        return None, None
+        return None, None, line[tweet_id_column]
 
     if word_level:
         line[text_column] = line[text_column].split(' ')
@@ -105,7 +104,7 @@ def parse_line(line, text_column, label_column, max_len, stop_chars = None, norm
     else:
         y_c = None
 
-    return X_c, y_c
+    return X_c, y_c, line[tweet_id_column]
 
 def read_stop_chars(stop_chars_file):
     if stop_chars_file is None:
@@ -131,7 +130,6 @@ class TweetPreprocessor:
         self.normalize = normalize
         self.add_ss_markers = add_ss_markers
         self.token2idx = {}
-        self.pad_token_idx = 0  # will be changed if the files are re-mapped
         # add start and stop markers
         if self.add_ss_markers:
             self.token2idx['<'] = 1
@@ -141,15 +139,17 @@ class TweetPreprocessor:
         self.len_dict = defaultdict(int)
         self.class2count = defaultdict(int)
 
-    def datum_to_string(self, X_ids, y_id):
+    def datum_to_string(self, X_ids, y_id, tweet_id):
 
         file_str = StringIO()
         file_str.write(','.join(X_ids).strip())
         file_str.write('<:>')
         file_str.write(y_id)
+        file_str.write('<:>')
+        file_str.write(tweet_id)
         return file_str.getvalue()
 
-    def read_data(self, output_files_dir, data_file, parser, text_column, label_column, encoding, is_train = False):
+    def read_data(self, output_files_dir, data_file, parser, text_column, label_column, tweet_id_column, encoding, is_train = False):
 
         if data_file is None:
             return
@@ -159,32 +159,19 @@ class TweetPreprocessor:
         fname_wo_ext = fname[:dot_index]
 
         indices_file = os.path.join(output_files_dir, fname_wo_ext + '_' + self.time_stamp + '.txt')
-        new_data_file = os.path.join(output_files_dir, fname_wo_ext + '_pp.txt')
-
+        dropped_tweets_file = os.path.join(output_files_dir, fname_wo_ext + '_' + self.time_stamp + '_dropped.txt')
         delimiter = get_delimiter(data_file)
-        line_count = 0
-        with open(data_file, 'r') as fhr, open(indices_file, 'w') as fhw1, codecs.open(new_data_file, 'w', encoding = encoding) as fhw2:
+        with open(data_file, 'r') as fhr, open(indices_file, 'w') as fhw1, codecs.open(dropped_tweets_file, 'w', encoding = encoding) as fhw2:
             reader = unicode_csv_reader2(fhr, encoding, delimiter = delimiter)
             for row in reader:
-                line_count += 1
-                # print line_count
-                fhw2.write('###########################################################################')
-                fhw2.write('\n')
-                fhw2.write(row[text_column])
-                fhw2.write('\n')
                 # optional parameters to the parser
                 # stop_chars = None, normalize = False, add_ss_markers = False, word_level = False
-                X_c, y_c = parser(row, text_column, label_column, self.max_len, stop_chars = self.stop_chars, normalize = self.normalize, word_level = self.word_level, add_ss_markers = self.add_ss_markers)
+                X_c, y_c, tweet_id = parser(row, text_column, label_column, tweet_id_column, self.max_len, stop_chars = self.stop_chars, normalize = self.normalize, word_level = self.word_level, add_ss_markers = self.add_ss_markers)
                 if X_c is None:
-                    fhw2.write('None')
-                    fhw2.write('\n')
-                    fhw2.write('###########################################################################')
+                    # print tweet_id
+                    fhw2.write(tweet_id)
                     fhw2.write('\n')
                     continue
-                fhw2.write(self.wsp.join(X_c))
-                fhw2.write('\n')
-                fhw2.write('###########################################################################')
-                fhw2.write('\n')
                 X_ids = self.update_token2idx(X_c)
                 # _tmp = ','.join(X_ids)
                 if y_c is not None:
@@ -196,7 +183,7 @@ class TweetPreprocessor:
                 if is_train and y_id != '':
                     self.class2count[int(y_id)] += 1
 
-                fhw1.write(self.datum_to_string(X_ids, y_id))
+                fhw1.write(self.datum_to_string(X_ids, y_id, tweet_id))
                 fhw1.write('\n')
 
         return indices_file
@@ -272,33 +259,8 @@ class TweetPreprocessor:
         for i in xrange(n_classes):
             self.class_weights[i] = (K / self.class2count[i])
 
-#     def split_unlabeled_data(self, output_files_dir, data_file, split_ratio = 0.2):
-#
-#         if data_file is None:
-#             return
-#
-#         _, fname = os.path.split(data_file)
-#         dot_index = fname.rindex('.')
-#         fname_wo_ext = fname[:dot_index]
-#
-#         all_data_file = os.path.join(output_files_dir, fname_wo_ext + '_' + self.time_stamp + '.txt')
-#         tr_data_file = os.path.join(output_files_dir, fname_wo_ext + '_tr_' + self.time_stamp + '.txt')
-#         val_data_file = os.path.join(output_files_dir, fname_wo_ext + '_val_' + self.time_stamp + '.txt')
-#
-#         rnd_p = np.random.permutation(10)
-#         tr_index = int((1 - split_ratio) * 10)
-#         tr_indices = rnd_p[:tr_index]
-#
-#         with open(all_data_file, 'r') as fhr, open(tr_data_file, 'w') as fhw1, open(val_data_file, 'w') as fhw2:
-#             for line in fhr:
-#                 rv = randint(0, 9)
-#                 if rv in tr_indices:
-#                     fhw1.write(line)
-#                 else:
-#                     fhw2.write(line)
-
     def get_onehot_vectors(self):
-        W = np.zeros((len(self.token2idx) + 1, len(self.token2idx) + 1))
+        W = np.zeros((len(self.token2idx), len(self.token2idx)))
         for ii in xrange(len(W)):
             W[ii][ii] = 1
         return W
@@ -321,7 +283,7 @@ class TweetPreprocessor:
             unicode_tokens, unicode_embs = pickle.load(open(emoji_file, "rb"))
             unicode_token2idx = {v:k for k, v in enumerate(unicode_tokens)}
 
-        W = np.zeros((len(self.token2idx) + 1, emb_dim))
+        W = np.zeros((len(self.token2idx), emb_dim))
 
         w2v_miss_count = 0
         emoji_miss_count = 0
@@ -337,7 +299,7 @@ class TweetPreprocessor:
                 W[self.token2idx[token]] = np.random.uniform(-0.25, 0.25, emb_dim)
 
         # just make sure the embedding corresponding to padding token is al zero
-        W[self.pad_token_idx] = np.zeros(emb_dim, dtype = 'float32')
+        W[self.token2idx['PAD']] = np.zeros(emb_dim, dtype = 'float32')
 
         print 'Number of tokens in vocabulary:', len(self.token2idx.keys())
         print 'Number of token embeddings found:', (len(self.token2idx.keys()) - w2v_miss_count)
@@ -349,9 +311,6 @@ class TweetPreprocessor:
         print 'Length distribution: ', self.len_dict
         print 'Train set class distribution: ', self.class2count
         print 'Vocabulary:'
-#         for w in sorted(self.token2idx.keys()):
-#             print w.encode('utf8')
-        print 'pad_token_idx:', self.pad_token_idx
         _token_lst = sorted(self.token2idx.items(), key = operator.itemgetter(1))
         for w, idx in _token_lst:
             print w.encode('utf8'), idx, self.counts[w]
@@ -374,13 +333,18 @@ class TweetPreprocessor:
                     # account for padding token
                     _idx2c[0] += max(0, self.max_len - len(idx_lst))
 
-        rare_words = set()
+        # replace rare words
+        rare_wc = 0
         idx2c = {}
         for k, v in _idx2c.iteritems():
-            if v > 1:
+            if v > 2:
                 idx2c[k] = v
             else:
-                rare_words.add(k)
+                rare_wc += v
+
+        # add the rare word as a token
+        rare_word_id = len(self.token2idx) + 1
+        idx2c[rare_word_id] = rare_wc
 
         s_idx2c = sorted(idx2c.items(), key = operator.itemgetter(1), reverse = True)
 
@@ -392,33 +356,48 @@ class TweetPreprocessor:
             idx_map[t[0]] = wc
             wc += 1
 
-        tweets_dropped = defaultdict(int)
-        for ifile in (labeled_files + unlabeled_files):
-            print 'Re-mapping file:', ifile
-            fpath, fname = os.path.split(ifile)
-            dot_index = fname.rindex('.')
-            fname_wo_ext = fname[:dot_index]
-            with open(ifile, 'r') as fhr, open(os.path.join(fpath, fname_wo_ext + '_remapped.txt'), 'w') as fhw:
-                for line in fhr:
-                    x_y = line.strip().split('<:>')
-                    idx_lst = x_y[0].split(',')
-                    new_idx_lst = [str(idx_map[int(idx)]) for idx in idx_lst if int(idx) in idx_map]
-                    if len(new_idx_lst) == 0:
-                        tweets_dropped[fname] += 1
-                        continue
-                    fhw.write(self.datum_to_string(new_idx_lst, x_y[1]))
-                    fhw.write('\n')
-
-        # save the updated idx for padding token. It will no longer be zero
-        self.pad_token_idx = idx_map[0]
         # update token2idx based on new mapping
         for token in self.token2idx.keys():
             if self.token2idx[token] in idx_map:
                 _token2idx[token] = idx_map[self.token2idx[token]]
                 _counts[token] = idx2c[self.token2idx[token]]
 
+        # save the below tokens in the map
+        _token2idx['UNK'] = idx_map[rare_word_id]
+        _token2idx['PAD'] = idx_map[0]
+        _counts['UNK'] = rare_wc
+        _counts['PAD'] = idx2c[0]
+
         self.token2idx = _token2idx
         self.counts = _counts
+        _idx2token = {v:k for k, v in self.token2idx.iteritems()}
+
+        tweets_dropped = defaultdict(int)
+        for ifile in (labeled_files + unlabeled_files):
+            print 'Re-mapping file:', ifile
+            fpath, fname = os.path.split(ifile)
+            dot_index = fname.rindex('.')
+            fname_wo_ext = fname[:dot_index]
+            with open(ifile, 'r') as fhr1, \
+                open(os.path.join(fpath, fname_wo_ext + '_remapped.txt'), 'w') as fhw1, \
+                open(os.path.join(fpath, fname_wo_ext + '_pp.txt'), 'w') as fhw2:
+                for line in fhr1:
+                    x_y_tid = line.strip().split('<:>')
+                    idx_lst = x_y_tid[0].split(',')
+                    new_idx_lst = []
+                    for idx in idx_lst:
+                        idx = int(idx)
+                        if idx in idx_map:
+                            new_idx_lst.append(str(idx_map[idx]))
+                        else:
+                            new_idx_lst.append(str(idx_map[rare_word_id]))
+                    if len(new_idx_lst) == 0:
+                        tweets_dropped[fname] += 1
+                        continue
+                    else:
+                        fhw2.write(','.join([x_y_tid[2], self.wsp.join([_idx2token[int(idx)].encode('utf8') for idx in new_idx_lst])]))
+                        fhw1.write(self.datum_to_string(new_idx_lst, x_y_tid[1], x_y_tid[2]))
+                        fhw1.write('\n')
 
         # delete old files
         for ifile in (labeled_files + unlabeled_files):
@@ -450,32 +429,33 @@ def main(args):
     tweet_preprocessor = TweetPreprocessor(stop_chars, time_stamp, max_len = max_len, word_level = args['word_level'], normalize = args['normalize'], add_ss_markers = args['add_ss_markers'])
     if args['train_file'] is not None:
         print 'Processing training set . . .'
-        labeled_files.append(tweet_preprocessor.read_data(args['output_file_dir'], args['train_file'], parse_line, 'text', 'label', 'utf8', is_train = True))
+        labeled_files.append(tweet_preprocessor.read_data(args['output_file_dir'], args['train_file'], parse_line, 'text', 'label', 'tweet_id', 'utf8', is_train = True))
     if args['val_file'] is not None:
         print 'Processing validation set . . .'
-        labeled_files.append(tweet_preprocessor.read_data(args['output_file_dir'], args['val_file'], parse_line, 'text', 'label', 'utf8'))
+        labeled_files.append(tweet_preprocessor.read_data(args['output_file_dir'], args['val_file'], parse_line, 'text', 'label', 'tweet_id', 'utf8'))
     if args['test_file'] is not None:
         print 'Processing test set . . .'
-        labeled_files.append(tweet_preprocessor.read_data(args['output_file_dir'], args['test_file'], parse_line, 'text', 'label', 'utf8'))
+        labeled_files.append(tweet_preprocessor.read_data(args['output_file_dir'], args['test_file'], parse_line, 'text', 'label', 'tweet_id', 'utf8'))
     if args['tweets_file_tr'] is not None:
         print 'Processing unlabeled train set . . .'
-        unlabeled_files.append(tweet_preprocessor.read_data(args['output_file_dir'], args['tweets_file_tr'], parse_line, 'text', 'label', 'utf8'))
+        unlabeled_files.append(tweet_preprocessor.read_data(args['output_file_dir'], args['tweets_file_tr'], parse_line, 'text', 'label', 'tweet_id', 'utf8'))
     if args['tweets_file_val'] is not None:
         print 'Processing unlabeled validation set . . .'
-        unlabeled_files.append(tweet_preprocessor.read_data(args['output_file_dir'], args['tweets_file_val'], parse_line, 'text', 'label', 'utf8'))
+        unlabeled_files.append(tweet_preprocessor.read_data(args['output_file_dir'], args['tweets_file_val'], parse_line, 'text', 'label', 'tweet_id', 'utf8'))
 
     # remap files here
     if args['remap']:
         print 'Re-mapping token2idx . . .'
         tweet_preprocessor.remap(labeled_files, unlabeled_files)
 
+    # At this point the padding token is already in token2idx
     tweet_preprocessor.get_class_weights()
     if args['use_one_hot']:
         W = tweet_preprocessor.get_onehot_vectors()
     else:
         W = tweet_preprocessor.get_dense_embeddings(args['w2v_file'], args['emoji_file'], args['emb_dim'])
     # tweet_preprocessor.split_unlabeled_data(args['output_file_dir'], args['tweets_file'], split_ratio = 0.2)
-    pickle.dump([W, tweet_preprocessor.token2idx, tweet_preprocessor.label2idx, tweet_preprocessor.counts, tweet_preprocessor.class_weights, tweet_preprocessor.max_len, tweet_preprocessor.pad_token_idx], open(os.path.join(args['output_file_dir'], 'dictionaries_' + time_stamp + '.p'), "wb"))
+    pickle.dump([W, tweet_preprocessor.token2idx, tweet_preprocessor.label2idx, tweet_preprocessor.counts, tweet_preprocessor.class_weights, tweet_preprocessor.max_len], open(os.path.join(args['output_file_dir'], 'dictionaries_' + time_stamp + '.p'), "wb"))
     tweet_preprocessor.print_stats()
 
 if __name__ == '__main__':

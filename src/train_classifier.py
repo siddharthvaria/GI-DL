@@ -62,7 +62,7 @@ def print_hyper_params(args):
 
 def vizualize_embeddings(emb_matrix, token2idx):
 
-    assert len(emb_matrix) == (len(token2idx) + 1), 'len(emb_matrix) != len(token2idx) + 1'
+    assert len(emb_matrix) == (len(token2idx)), 'len(emb_matrix) != len(token2idx)'
 
     unicode_chars = []
     unicode_embs = []
@@ -100,7 +100,7 @@ def main(args):
 
     args['max_seq_len'] = corpus.max_len
     args['nclasses'] = len(corpus.label2idx)
-    args['ntokens'] = len(corpus.token2idx) + 1  # +1 for the padding token
+    args['ntokens'] = len(corpus.token2idx)
 
     if args['arch_type'] == 'cnn':
         args['kernel_sizes'] = [1, 2, 3, 4, 5]

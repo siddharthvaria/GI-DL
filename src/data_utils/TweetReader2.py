@@ -98,10 +98,10 @@ class TweetCorpus:
 
     def __init__(self, arch_type, train_file = None, val_file = None, test_file = None, unld_train_file = None, unld_val_file = None, dictionaries_file = None):
 
-        self.W, self.token2idx, self.label2idx, self.counts, self.class_weights, self.max_len, self.pad_token_idx = pickle.load(open(dictionaries_file, "rb"))
+        self.W, self.token2idx, self.label2idx, self.counts, self.class_weights, self.max_len = pickle.load(open(dictionaries_file, "rb"))
 
+        self.pad_token_idx = self.token2idx['PAD']
         self.idx2token = {v:k for k, v in self.token2idx.iteritems()}
-        self.idx2token[self.pad_token_idx] = ''
 
         self.arch_type = arch_type
 
@@ -125,8 +125,8 @@ class TweetCorpus:
         else:
             # TODO:
             # Uncomment to pre-train a language model
-            self.unld_tr_data = Corpus(unld_train_file, 'lm_' + self.arch_type, self.max_len, len(self.token2idx) + 1, self.pad_token_idx)
-            # self.unld_tr_data = Generator(unld_train_file, 'lm', self.max_len, len(self.token2idx) + 1)
+            self.unld_tr_data = Corpus(unld_train_file, 'lm_' + self.arch_type, self.max_len, len(self.token2idx), self.pad_token_idx)
+            # self.unld_tr_data = Generator(unld_train_file, 'lm', self.max_len, len(self.token2idx))
             # Uncomment to pre-train a classifier
             # self.unld_tr_data = Corpus(unld_train_file, 'clf', self.max_len, len(self.label2idx))
 
@@ -135,8 +135,8 @@ class TweetCorpus:
         else:
             # TODO:
             # Uncomment to pre-train a language model
-            self.unld_val_data = Corpus(unld_val_file, 'lm_' + self.arch_type, self.max_len, len(self.token2idx) + 1, self.pad_token_idx)
-            # self.unld_val_data = Generator(unld_val_file, 'lm', self.max_len, len(self.token2idx) + 1)
+            self.unld_val_data = Corpus(unld_val_file, 'lm_' + self.arch_type, self.max_len, len(self.token2idx), self.pad_token_idx)
+            # self.unld_val_data = Generator(unld_val_file, 'lm', self.max_len, len(self.token2idx))
             # Uncomment to pre-train a classifier
             # self.unld_val_data = Corpus(unld_val_file, 'clf', self.max_len, len(self.label2idx))
 
