@@ -11,9 +11,10 @@ Deep learning for gang violence prediction
 6. CascadeClassifier.py : implementation of cascade classifier with the option to pre-train a language model.
 7. test.py : load the trained model and get the predictions (probabilities and predicted classes)
 
-### To train a classifier
+## To learn about the command line arguments
+* python preprocess_tweets.py --help
+* python train.py --help
+* python test.py --help
 
-To learn about the command line arguments
-python preprocess_tweets.py --help
-python train.py --help
-python test.py --help
+## To train and test the classifier
+
