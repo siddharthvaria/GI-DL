@@ -199,15 +199,13 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description = '')
     # even though short flags can be used in the command line, they can not be used to access the value of the arguments
     # i.e args['pt'] will give KeyError.
-    requiredArgs = parser.add_argument_group('required arguments')
-    requiredArgs.add_argument('-tr', '--train_file', type = str, required = True, help = 'labeled train file')
-    requiredArgs.add_argument('-val', '--val_file', type = str, required = True, help = 'labeled validation file')
-    requiredArgs.add_argument('-tst', '--test_file', type = str, required = True, help = 'labeled test file')
-    requiredArgs.add_argument('-dict', '--dictionaries_file', type = str, required = True, help = 'pickled dictionary file (run preprocess_tweets.py to generate the dictionary file)')
-    requiredArgs.add_argument('-sdir', '--model_save_dir', type = str, required = True, help = 'directory where trained model should be saved')
-    requiredArgs.add_argument('-md', '--mode', type = str, required = True, help = 'mode (clf,clf_cv,lm)')
-    parser.add_argument('-at', '--arch_type', type = str, default = 'lstm', help = 'Type of architecture (lstm,cnn)')
-    # parser.add_argument('-pt', '--trained_model', type = bool, default = False, help = 'If this flag is True and if trained_modeled weights are provided, then they will be used to initialize the network')
+    parser.add_argument('-tr', '--train_file', type = str, default = None, help = 'labeled train file')
+    parser.add_argument('-val', '--val_file', type = str, default = None, help = 'labeled validation file')
+    parser.add_argument('-tst', '--test_file', type = str, default = None, help = 'labeled test file')
+    parser.add_argument('-dict', '--dictionaries_file', type = str, default = None, help = 'pickled dictionary file (run preprocess_tweets.py to generate the dictionary file)')
+    parser.add_argument('-sdir', '--model_save_dir', type = str, default = None, help = 'directory where trained model should be saved')
+    parser.add_argument('-md', '--mode', type = str, default = 'clf', help = 'mode (clf,clf_cv,lm)')
+    parser.add_argument('-at', '--arch_type', type = str, default = 'cnn', help = 'Type of architecture (lstm,cnn)')
     parser.add_argument('-tm', '--trained_model', type = str, default = None, help = 'Path to trained model file. If provided, training will be continued from this model.')
 
     parser.add_argument('-unld_tr', '--unld_train_file', type = str, default = None, help = 'unlabeled train file (for language model)')

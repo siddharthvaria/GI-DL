@@ -18,3 +18,9 @@ Deep learning for gang violence prediction
 
 ## To train and test the classifier
 
+
+* To train the classifier with either CNN or LSTM architecture:
+..* python -u train.py -sdir ../where/you/want/to/save/the/trained/model -md clf/lm -at cnn/lstm -tr ../path/to/labeled/training/data/file -val ../path/to/labeled/validation/data/file -tst ../path/to/labeled/test/data/file -dict ../path/to/dictionary/file
+* To train a language model with LSTM architecture:
+..* python -u train.py -md lm -at lstm -sdir ../where/you/want/to/save/the/trained/model -dict ../path/to/dictionary/file -unld_tr ../path/to/unlabeled/training/data/file -unld_val ../path/to/unlabeled/validation/data/file
+* To restore training of classifier from previously saved model, use the -tm flag and point it to the trained model file path.
