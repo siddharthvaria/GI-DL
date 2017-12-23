@@ -211,12 +211,11 @@ class LSTMClassifier(object):
                 epochs = args['n_epochs'], verbose = 2, batch_size = args['batch_size'], shuffle = True, \
                 callbacks = [callback], class_weight = class_weights)
 
-        self.model.load_weights(bst_model_path)
+        return self.predict(X_test, bst_model_path, args['batch_size'])
 
-        # bst_val_score = min(hist.history['val_loss'])
-
-        preds = self.model.predict([X_test], batch_size = args['batch_size'], verbose = 2)
-
+    def predict(self, X_test, model_path, batch_size):
+        self.model.load_weights(model_path)
+        preds = self.model.predict([X_test], batch_size = batch_size, verbose = 2)
         return preds
 
 class CNNLanguageModel(object):
@@ -342,12 +341,11 @@ class CNNClassifier(object):
                 epochs = args['n_epochs'], verbose = 2, batch_size = args['batch_size'], shuffle = True, \
                 callbacks = [callback], class_weight = class_weights)
 
-        self.model.load_weights(bst_model_path)
+        return self.predict(X_test, bst_model_path, args['batch_size'])
 
-        # bst_val_score = min(hist.history['val_loss'])
-
-        preds = self.model.predict([X_test], batch_size = args['batch_size'], verbose = 2)
-
+    def predict(self, X_test, model_path, batch_size):
+        self.model.load_weights(model_path)
+        preds = self.model.predict([X_test], batch_size = batch_size, verbose = 2)
         return preds
 
 class AutoEncoder(object):

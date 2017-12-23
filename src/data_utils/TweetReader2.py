@@ -123,22 +123,12 @@ class TweetCorpus:
         if unld_train_file is None:
             self.unld_tr_data = None
         else:
-            # TODO:
-            # Uncomment to pre-train a language model
             self.unld_tr_data = Corpus(unld_train_file, 'lm_' + self.arch_type, self.max_len, len(self.token2idx), self.pad_token_idx)
-            # self.unld_tr_data = Generator(unld_train_file, 'lm', self.max_len, len(self.token2idx))
-            # Uncomment to pre-train a classifier
-            # self.unld_tr_data = Corpus(unld_train_file, 'clf', self.max_len, len(self.label2idx))
 
         if unld_val_file is None:
             self.unld_val_data = None
         else:
-            # TODO:
-            # Uncomment to pre-train a language model
             self.unld_val_data = Corpus(unld_val_file, 'lm_' + self.arch_type, self.max_len, len(self.token2idx), self.pad_token_idx)
-            # self.unld_val_data = Generator(unld_val_file, 'lm', self.max_len, len(self.token2idx))
-            # Uncomment to pre-train a classifier
-            # self.unld_val_data = Corpus(unld_val_file, 'clf', self.max_len, len(self.label2idx))
 
     def get_data_for_classification(self):
         return self.tr_data.X, self.val_data.X, self.te_data.X, self.tr_data.y, self.val_data.y, self.te_data.y

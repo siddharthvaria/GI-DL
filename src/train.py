@@ -1,5 +1,6 @@
 import argparse
 import datetime
+import json
 import os
 from sklearn.manifold import TSNE
 from sklearn.metrics import classification_report
@@ -46,19 +47,9 @@ def generate_text(model, corpus, args):
 
         print '##############################################'
 
-def print_hyper_params(args):
-
-    print 'max_seq_len: ', args['max_seq_len']
-    print 'nclasses: ', args['nclasses']
-    print 'ntokens: ', args['ntokens']
-    print 'n_epochs: ', args['n_epochs']
-    if args['arch_type'] == 'lstm':
-        print 'lstm_hidden_dim: ', args['lstm_hidden_dim']
-    else:
-        print 'nfeature_maps: ', args['nfeature_maps']
-    print 'dropout: ', args['dropout']
-    print 'batch_size: ', args['batch_size']
-    print 'trainable: ', args['trainable']
+def write_args_json(args):
+    with open(os.path.join(args['model_save_dir'], 'args_' + args['ts'] + '.json'), 'w') as fh:
+        fh.write(json.dumps(args, indent = 4))
 
 def vizualize_embeddings(emb_matrix, token2idx):
 
@@ -94,7 +85,10 @@ def vizualize_embeddings(emb_matrix, token2idx):
     plt.grid()
     plt.show()
 
-def main(args):
+def load_corpus(args):
+
+    if args == None:
+        return None
 
     corpus = TweetCorpus(args['arch_type'], args['train_file'], args['val_file'], args['test_file'], args['unld_train_file'], args['unld_val_file'], args['dictionaries_file'])
 
@@ -112,9 +106,17 @@ def main(args):
         args['trainable'] = True
 
     ts = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+
     args['ts'] = ts
 
-    print_hyper_params(args)
+    return corpus
+
+def main(args):
+
+    corpus = load_corpus(args)
+
+    # save the arguments for reference
+    write_args_json(args)
 
     if args['mode'] == 'lm':
         if args['arch_type'] == 'lstm':
@@ -137,23 +139,17 @@ def main(args):
             print 'Creating LSTM classifier model . . .'
             clf = LSTMClassifier(corpus.W, args)
             # if the weights from the lm exists then use those weights instead
-            if args['pretrain']  and os.path.isfile(args['pretrained_weights']):
+            if args['trained_model'] is not None and os.path.isfile(args['trained_model']):
                 print 'Loading weights from trained language model . . .'
-                clf.model.load_weights(args['pretrained_weights'], by_name = True)
+                clf.model.load_weights(args['trained_model'], by_name = True)
         else:
             # args['kernel_sizes'] = [1, 2, 3, 4, 5]
             print 'Creating CNN classifier model . . .'
             clf = CNNClassifier(corpus.W, args)
             # if the weights from the pre-trained cnn exists then use those weights instead
-            if args['pretrain']  and os.path.isfile(args['pretrained_weights']):
+            if args['trained_model'] is not None and os.path.isfile(args['trained_model']):
                 print 'Loading weights from trained CNN model . . .'
-                clf.model.load_weights(args['pretrained_weights'], by_name = True)
-
-#         W_old = corpus.W
-        # make sure that Keras is replacing the embeddings with trained embeddings
-#         W_new = clf.embedding_layer.get_weights()[0]
-#         print 'shape(W_new): ', W_new.shape
-#         print 'np.sum: ', np.sum(W_old - W_new)  # np.sum should be much larger than 1
+                clf.model.load_weights(args['trained_model'], by_name = True)
 
         print 'Training classifier model . . .'
         X_train, X_val, X_test, y_train, y_val, y_test = corpus.get_data_for_classification()
@@ -173,17 +169,17 @@ def main(args):
                 print 'Creating LSTM classifier model . . .'
                 clf = LSTMClassifier(corpus.W, args)
                 # if the weights from the lm exists then use those weights instead
-                if args['pretrain']  and os.path.isfile(args['pretrained_weights']):
+                if args['trained_model'] is not None and os.path.isfile(args['trained_model']):
                     print 'Loading weights from trained language model . . .'
-                    clf.model.load_weights(args['pretrained_weights'], by_name = True)
+                    clf.model.load_weights(args['trained_model'], by_name = True)
             else:
                 # args['kernel_sizes'] = [1, 2, 3, 4, 5]
                 print 'Creating CNN classifier model . . .'
                 clf = CNNClassifier(corpus.W, args)
                 # if the weights from the pre-trained cnn exists then use those weights instead
-                if args['pretrain']  and os.path.isfile(args['pretrained_weights']):
+                if args['trained_model'] is not None and os.path.isfile(args['trained_model']):
                     print 'Loading weights from trained CNN model . . .'
-                    clf.model.load_weights(args['pretrained_weights'], by_name = True)
+                    clf.model.load_weights(args['trained_model'], by_name = True)
             print 'Training classifier model . . .'
             preds = clf.fit(X_train, X_val, X_val, y_train, y_val, corpus.class_weights, args)
             preds_all.extend(preds)
@@ -207,15 +203,15 @@ def parse_arguments():
     requiredArgs.add_argument('-tr', '--train_file', type = str, required = True, help = 'labeled train file')
     requiredArgs.add_argument('-val', '--val_file', type = str, required = True, help = 'labeled validation file')
     requiredArgs.add_argument('-tst', '--test_file', type = str, required = True, help = 'labeled test file')
-    requiredArgs.add_argument('-dict', '--dictionaries_file', type = str, required = True, help = 'pickled dictionary file')
+    requiredArgs.add_argument('-dict', '--dictionaries_file', type = str, required = True, help = 'pickled dictionary file (run preprocess_tweets.py to generate the dictionary file)')
     requiredArgs.add_argument('-sdir', '--model_save_dir', type = str, required = True, help = 'directory where trained model should be saved')
     requiredArgs.add_argument('-md', '--mode', type = str, required = True, help = 'mode (clf,clf_cv,lm)')
     parser.add_argument('-at', '--arch_type', type = str, default = 'lstm', help = 'Type of architecture (lstm,cnn)')
-    parser.add_argument('-pt', '--pretrain', type = bool, default = False, help = 'If this flag is True and if pretrained weights are provided, then they will be used to initialize the network')
-    parser.add_argument('-w', '--pretrained_weights', type = str, default = None, help = 'Path to pretrained weights file')
+    # parser.add_argument('-pt', '--trained_model', type = bool, default = False, help = 'If this flag is True and if trained_modeled weights are provided, then they will be used to initialize the network')
+    parser.add_argument('-tm', '--trained_model', type = str, default = None, help = 'Path to trained model file. If provided, training will be continued from this model.')
 
-    parser.add_argument('-unld_tr', '--unld_train_file', type = str, default = None)
-    parser.add_argument('-unld_val', '--unld_val_file', type = str, default = None)
+    parser.add_argument('-unld_tr', '--unld_train_file', type = str, default = None, help = 'unlabeled train file (for language model)')
+    parser.add_argument('-unld_val', '--unld_val_file', type = str, default = None, help = 'unlabeled validation file (for language model)')
     parser.add_argument('-epochs', '--n_epochs', type = int, default = 50)
     parser.add_argument('-lstm_hd', '--lstm_hidden_dim', type = int, default = 256)
     parser.add_argument('-nfmaps', '--nfeature_maps', type = int, default = 200)
