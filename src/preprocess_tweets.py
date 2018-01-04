@@ -1,110 +1,13 @@
 import argparse
-from cStringIO import StringIO
 import codecs
 from collections import defaultdict
 import datetime
 from gensim.models import KeyedVectors
-from nltk.tokenize import TweetTokenizer
 import operator
 import os
-from random import randint
-import string, re
-
 import cPickle as pickle
-from data_utils.utils import unicode_csv_reader2
+from data_utils.utils import unicode_csv_reader2, parse_line, get_delimiter, datum_to_string, delete_files
 import numpy as np
-
-# from data_utils.preprocess import preprocess
-aggress = set(['aggress', 'insult', 'snitch', 'threat', 'brag', 'aod', 'aware', 'authority', 'trust', 'fight', 'pride', 'power', 'lyric'])
-loss = set(['loss', 'grief', 'death', 'sad', 'alone', 'reac', 'guns'])
-# string.punctuation : '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'
-# regex_punc = re.compile('[%s]' % re.escape(string.punctuation))
-regex_punc = re.compile('[\\!\\"\\$\\%\\&\\\'\\(\\)\\*\\+\\,\\-\\.\\/\\:\\;\\<\\=\\>\\?\\@\\[\\\\\\]\\^\\`\\{\\|\\}\\~]')
-# regex_digit = re.compile(r"[+-]?\d+(?:\.\d+)?")
-
-def get_delimiter(data_file):
-    if data_file.endswith('.csv'):
-        delimiter = ','
-    elif data_file.endswith('.tsv'):
-        delimiter = '\t'
-    elif data_file.endswith('.txt'):
-        delimiter = ' '
-    return delimiter
-
-def collapse_label(fine_grained):
-    fine_grained = fine_grained.lower()
-    for a in aggress:
-        if a in fine_grained: return 'aggress'
-    for l in loss:
-        if l in fine_grained: return 'loss'
-
-    return 'other'
-
-def preprocess(tweet, is_word_level = False):
-    # replace all other white space with a single space
-    tweet = re.sub('\s+', ' ', tweet)
-    # remove emoji placeholders
-    tweet = re.sub('(::emoji::)', '', tweet)
-    # replace &amp; with and
-    tweet = re.sub('&amp;', 'and', tweet)
-    if is_word_level:
-        tknzr = TweetTokenizer()
-        tokens = tknzr.tokenize(tweet)
-        tweet = ' '.join(tokens)
-    # replace user handles with a constant
-    tweet = re.sub('@[0-9a-zA-Z_]+', '__USER_HANDLE__', tweet)
-    # replace urls
-    tweet = re.sub('https?://[a-zA-Z0-9_\./]*', '__URL__', tweet)
-    # replace retweet markers
-    tweet = re.sub('^RT', '__RT__', tweet)
-    # remove words containing digits
-    tweet = re.sub(r'#*\w*\d+(?:[\./:,\-]\d+)?\w*', '', tweet).strip()
-    tweet = regex_punc.sub('', tweet)
-    # remove extra white space due to above operations
-    tweet = re.sub(' +', ' ', tweet)
-    return tweet
-
-def parse_line(line, text_column, label_column, tweet_id_column, max_len, stop_chars = None, normalize = False, add_ss_markers = False, word_level = False):
-
-    if add_ss_markers:
-        # -4 to account for start and stop markers and spaces
-        _max_len = max_len - 4
-    else:
-        _max_len = max_len
-
-    # take line (dict) as input and return text along with label if label is present
-    if line[text_column] in (None, ''):
-        return None, None, line[tweet_id_column]
-
-    if stop_chars is not None:
-        line[text_column] = [ch for ch in line[text_column] if ch not in stop_chars]
-        line[text_column] = ''.join(line[text_column])
-
-    if normalize:
-        line[text_column] = preprocess(line[text_column], is_word_level = word_level)
-
-    # print line[text_column]
-
-    if line[text_column] in (None, ''):
-        return None, None, line[tweet_id_column]
-
-    if word_level:
-        line[text_column] = line[text_column].split(' ')
-
-    if len(line[text_column]) > _max_len:
-        line[text_column] = line[text_column][:_max_len]
-
-    if add_ss_markers:
-        line[text_column] = '< ' + line[text_column] + ' >'
-
-    X_c = line[text_column]
-    if label_column in line.keys():
-        # y_c = collapse_label(line[label_column])
-        y_c = line[label_column]
-    else:
-        y_c = None
-
-    return X_c, y_c, line[tweet_id_column]
 
 def read_stop_chars(stop_chars_file):
     if stop_chars_file is None:
@@ -139,16 +42,6 @@ class TweetPreprocessor:
         self.len_dict = defaultdict(int)
         self.class2count = defaultdict(int)
 
-    def datum_to_string(self, X_ids, y_id, tweet_id):
-
-        file_str = StringIO()
-        file_str.write(','.join(X_ids).strip())
-        file_str.write('<:>')
-        file_str.write(y_id)
-        file_str.write('<:>')
-        file_str.write(tweet_id)
-        return file_str.getvalue()
-
     def read_data(self, output_files_dir, data_file, parser, text_column, label_column, tweet_id_column, encoding, is_train = False):
 
         if data_file is None:
@@ -158,14 +51,15 @@ class TweetPreprocessor:
         dot_index = fname.rindex('.')
         fname_wo_ext = fname[:dot_index]
 
-        indices_file = os.path.join(output_files_dir, fname_wo_ext + '_' + self.time_stamp + '.txt')
-        dropped_tweets_file = os.path.join(output_files_dir, fname_wo_ext + '_' + self.time_stamp + '_dropped.txt')
+        if not os.path.exists(os.path.join(output_files_dir, 'extra_files')):
+            os.makedirs(os.path.join(output_files_dir, 'extra_files'))
+
+        indices_file = os.path.join(output_files_dir, '_' + fname_wo_ext + '_' + self.time_stamp + '.txt')
+        dropped_tweets_file = os.path.join(output_files_dir, 'extra_files', fname_wo_ext + '_' + self.time_stamp + '_dropped.txt')
         delimiter = get_delimiter(data_file)
         with open(data_file, 'r') as fhr, open(indices_file, 'w') as fhw1, codecs.open(dropped_tweets_file, 'w', encoding = encoding) as fhw2:
             reader = unicode_csv_reader2(fhr, encoding, delimiter = delimiter)
             for row in reader:
-                # optional parameters to the parser
-                # stop_chars = None, normalize = False, add_ss_markers = False, word_level = False
                 X_c, y_c, tweet_id = parser(row, text_column, label_column, tweet_id_column, self.max_len, stop_chars = self.stop_chars, normalize = self.normalize, word_level = self.word_level, add_ss_markers = self.add_ss_markers)
                 if X_c is None:
                     # print tweet_id
@@ -183,7 +77,7 @@ class TweetPreprocessor:
                 if is_train and y_id != '':
                     self.class2count[int(y_id)] += 1
 
-                fhw1.write(self.datum_to_string(X_ids, y_id, tweet_id))
+                fhw1.write(datum_to_string(X_ids, y_id, tweet_id))
                 fhw1.write('\n')
 
         return indices_file
@@ -363,9 +257,9 @@ class TweetPreprocessor:
                 _counts[token] = idx2c[self.token2idx[token]]
 
         # save the below tokens in the map
-        _token2idx['UNK'] = idx_map[rare_word_id]
+        _token2idx['__UNK__'] = idx_map[rare_word_id]
         _token2idx['PAD'] = idx_map[0]
-        _counts['UNK'] = rare_wc
+        _counts['__UNK__'] = rare_wc
         _counts['PAD'] = idx2c[0]
 
         self.token2idx = _token2idx
@@ -374,13 +268,13 @@ class TweetPreprocessor:
 
         tweets_dropped = defaultdict(int)
         for ifile in (labeled_files + unlabeled_files):
-            print 'Re-mapping file:', ifile
+            # print 'Re-mapping file:', ifile
             fpath, fname = os.path.split(ifile)
             dot_index = fname.rindex('.')
-            fname_wo_ext = fname[:dot_index]
+            fname_wo_ext = fname[1:dot_index]
             with open(ifile, 'r') as fhr1, \
-                open(os.path.join(fpath, fname_wo_ext + '_remapped.txt'), 'w') as fhw1, \
-                open(os.path.join(fpath, fname_wo_ext + '_pp.txt'), 'w') as fhw2:
+                open(os.path.join(fpath, fname_wo_ext + '.txt'), 'w') as fhw1, \
+                open(os.path.join(fpath, 'extra_files', fname_wo_ext + '_pp.txt'), 'w') as fhw2:
                 for line in fhr1:
                     x_y_tid = line.strip().split('<:>')
                     idx_lst = x_y_tid[0].split(',')
@@ -396,15 +290,12 @@ class TweetPreprocessor:
                         continue
                     else:
                         fhw2.write(','.join([x_y_tid[2], self.wsp.join([_idx2token[int(idx)].encode('utf8') for idx in new_idx_lst])]))
-                        fhw1.write(self.datum_to_string(new_idx_lst, x_y_tid[1], x_y_tid[2]))
+                        fhw2.write('\n')
+                        fhw1.write(datum_to_string(new_idx_lst, x_y_tid[1], x_y_tid[2]))
                         fhw1.write('\n')
 
         # delete old files
-        for ifile in (labeled_files + unlabeled_files):
-            try:
-                os.remove(ifile)
-            except OSError:
-                pass
+        delete_files(labeled_files + unlabeled_files)
 
         print 'Tweet drop statistics:'
         print tweets_dropped
@@ -443,10 +334,8 @@ def main(args):
         print 'Processing unlabeled validation set . . .'
         unlabeled_files.append(tweet_preprocessor.read_data(args['output_file_dir'], args['tweets_file_val'], parse_line, 'text', 'label', 'tweet_id', 'utf8'))
 
-    # remap files here
-    if args['remap']:
-        print 'Re-mapping token2idx . . .'
-        tweet_preprocessor.remap(labeled_files, unlabeled_files)
+    # print 'Re-mapping token2idx . . .'
+    tweet_preprocessor.remap(labeled_files, unlabeled_files)
 
     # At this point the padding token is already in token2idx
     tweet_preprocessor.get_class_weights()
@@ -464,16 +353,15 @@ if __name__ == '__main__':
     parser.add_argument('-tr', '--train_file', type = str, default = None, help = 'labeled train set')
     parser.add_argument('-val', '--val_file', type = str, default = None, help = 'labeled validation set')
     parser.add_argument('-tst', '--test_file', type = str, default = None, help = 'labeled test set')
-    parser.add_argument('output_file_dir', type = str, default = None, help = 'directory where output files should be saved')
+    parser.add_argument('-ofd', '--output_file_dir', type = str, default = None, help = 'directory where output files should be saved')
 
     parser.add_argument('-sch', '--stop_chars_file', type = str, default = None, help = 'file containing stop characters/words')
-    parser.add_argument('-rmp', '--remap', type = bool, default = True, help = 'If True, the token2idx will be re-mapped such that token indices are in decreasing order of freq. starting from zero')
     parser.add_argument('-1h', '--use_one_hot', type = bool, default = False, help = 'If True, one hot vectors will be used instead of dense embeddings')
     parser.add_argument('-wfile', '--w2v_file', type = str, default = None, help = 'file containing pre-trained word2vec embeddings')
     parser.add_argument('-efile', '--emoji_file', type = str, default = None, help = 'file containing pre-trained emoji embeddings')
     parser.add_argument('-unld_tr', '--tweets_file_tr', type = str, default = None, help = 'unlabeled tweets file to be used for training language model')
     parser.add_argument('-unld_val', '--tweets_file_val', type = str, default = None, help = 'unlabeled tweets file to be used for validating language model')
-    parser.add_argument('-nor', '--normalize', type = bool, default = False, help = 'If True, the tweets will be normalized. Check "preprocess" method')
+    parser.add_argument('-nor', '--normalize', type = bool, default = True, help = 'If True, the tweets will be normalized. Check "preprocess" method')
     parser.add_argument('-wl', '--word_level', type = bool, default = False, help = 'If True, tweets will be processed at word level otherwise at char level')
     parser.add_argument('-amrks', '--add_ss_markers', type = bool, default = False, help = 'If True, start and stop markers will be added to the tweets')
     parser.add_argument('-edim', '--emb_dim', type = int, default = 300, help = 'embedding dimension')

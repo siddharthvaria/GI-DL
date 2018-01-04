@@ -90,7 +90,7 @@ def load_corpus(args):
     if args == None:
         return None
 
-    corpus = TweetCorpus(args['arch_type'], args['train_file'], args['val_file'], args['test_file'], args['unld_train_file'], args['unld_val_file'], args['dictionaries_file'])
+    corpus = TweetCorpus(args['train_file'], args['val_file'], args['test_file'], args['unld_train_file'], args['unld_val_file'], args['dictionaries_file'])
 
     args['max_seq_len'] = corpus.max_len
     args['nclasses'] = len(corpus.label2idx)
@@ -207,7 +207,6 @@ def parse_arguments():
     parser.add_argument('-md', '--mode', type = str, default = 'clf', help = 'mode (clf,clf_cv,lm)')
     parser.add_argument('-at', '--arch_type', type = str, default = 'cnn', help = 'Type of architecture (lstm,cnn)')
     parser.add_argument('-tm', '--trained_model', type = str, default = None, help = 'Path to trained model file. If provided, training will be continued from this model.')
-
     parser.add_argument('-unld_tr', '--unld_train_file', type = str, default = None, help = 'unlabeled train file (for language model)')
     parser.add_argument('-unld_val', '--unld_val_file', type = str, default = None, help = 'unlabeled validation file (for language model)')
     parser.add_argument('-epochs', '--n_epochs', type = int, default = 50)

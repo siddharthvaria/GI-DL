@@ -5,24 +5,50 @@ import subprocess
 import cPickle as pickle
 import numpy as np
 
-def parse_line(line, mode, max_len, nclasses, pad_token_idx):
+def flatten(X, context_size):
+    if X == None:
+        return None, None
+    X_tcs = []
+    y_tcs = []
+    for X_c in X:
+        # pad atleast context_size - 1 zeros in the beginning
+        # X_c = X_c.tolist()
+        X_c = [0 for _ in xrange(context_size - 1)] + X_c
+        s = 0
+        while s + context_size < len(X_c):
+            X_tcs.append(X_c[s:s + context_size])
+            y_tcs.append(X_c[s + context_size])
+            s += 1
+
+    X_tcs = np.asarray(X_tcs)
+    y_tcs = np.asarray(y_tcs)
+    '''
+    https://github.com/fchollet/keras/issues/483
+    The trick to fix issue with the error expecting a 3D input when using
+    sparse_categorical_crossentropy is to format outputs in a sparse 3-dimensional way.
+    So instead of formatting the output like this:
+    y_indices_naive = [1,5,4300,...]
+    is should be formatted this way:
+    y_indices_naive = [[1,], [5,] , [4300,],...]
+    That will make Keras happy and it'll trained the model as expected.
+    '''
+    y_tcs = np.expand_dims(y_tcs, 1)
+    return X_tcs, y_tcs
+
+def add_pad_token(X, pad_token_idx, max_len):
+    _X = [np.asarray([pad_token_idx for _ in xrange(max_len - len(indices))] + indices) for indices in X]
+    return np.asarray(_X)
+
+def parse_line(line, mode):
     x_y = line.split('<:>')
     indices = [int(ch) for ch in x_y[0].split(',')]
-    if mode == 'lm_cnn':
-        X_c = np.asarray(indices)
-        y_c = None
-    elif mode == 'lm_lstm':
-        indices = [pad_token_idx for _ in xrange(max_len - len(indices))] + indices
-        X_c = np.asarray(indices)
+    X_c = indices
+    if mode == 'lm':
         y_c = None
     elif mode == 'clf':
-        indices = [pad_token_idx for _ in xrange(max_len - len(indices))] + indices
-        X_c = np.asarray(indices)
-        y_c = np_utils.to_categorical([int(x_y[1])], nclasses)
+        y_c = [int(x_y[1])]
     elif mode == 'seq2seq':
-        indices = [pad_token_idx for _ in xrange(max_len - len(indices))] + indices
-        X_c = np.asarray(indices)
-        y_c = np_utils.to_categorical(indices, nclasses)
+        y_c = indices
     return X_c, y_c
 
 def get_line_count(fname):
@@ -35,17 +61,17 @@ def get_line_count(fname):
 
 class Corpus:
     # in-memory data
-    def __init__(self, data_file, mode, max_len, nclasses, pad_token_idx):
+    def __init__(self, data_file, mode):
         self.X = []
         self.y = []
-        self.read_data(data_file, mode, max_len, nclasses, pad_token_idx)
+        self.read_data(data_file, mode)
         print 'Number of lines in %s: %d' % (data_file, len(self.X))
 
-    def read_data(self, data_file, mode, max_len, nclasses, pad_token_idx):
+    def read_data(self, data_file, mode):
 
         with open(data_file, 'r') as fh:
             for line in fh:
-                X_c, y_c = parse_line(line, mode, max_len, nclasses, pad_token_idx)
+                X_c, y_c = parse_line(line, mode)
                 self.X.append(X_c)
                 self.y.append(y_c)
 
@@ -93,98 +119,77 @@ class Generator:
                     X_c, y_c = parse_line(line, self.mode, self.max_len, self.nclasses, self.pad_token_idx)
                     yield (np.asarray([X_c]), np.asarray([y_c]))
 
-
 class TweetCorpus:
 
-    def __init__(self, arch_type, train_file = None, val_file = None, test_file = None, unld_train_file = None, unld_val_file = None, dictionaries_file = None):
+    def __init__(self, train_file = None, val_file = None, test_file = None, unld_train_file = None, unld_val_file = None, dictionaries_file = None):
 
         self.W, self.token2idx, self.label2idx, self.counts, self.class_weights, self.max_len = pickle.load(open(dictionaries_file, "rb"))
 
         self.pad_token_idx = self.token2idx['PAD']
         self.idx2token = {v:k for k, v in self.token2idx.iteritems()}
 
-        self.arch_type = arch_type
-
         if train_file is None:
             self.tr_data = None
         else:
-            self.tr_data = Corpus(train_file, 'clf', self.max_len, len(self.label2idx), self.pad_token_idx)
+            self.tr_data = Corpus(train_file, 'clf')
 
         if val_file is None:
             self.val_data = None
         else:
-            self.val_data = Corpus(val_file, 'clf', self.max_len, len(self.label2idx), self.pad_token_idx)
+            self.val_data = Corpus(val_file, 'clf')
 
         if test_file is None:
             self.te_data = None
         else:
-            self.te_data = Corpus(test_file, 'clf', self.max_len, len(self.label2idx), self.pad_token_idx)
+            self.te_data = Corpus(test_file, 'clf')
 
         if unld_train_file is None:
             self.unld_tr_data = None
         else:
-            self.unld_tr_data = Corpus(unld_train_file, 'lm_' + self.arch_type, self.max_len, len(self.token2idx), self.pad_token_idx)
+            self.unld_tr_data = Corpus(unld_train_file, 'lm')
 
         if unld_val_file is None:
             self.unld_val_data = None
         else:
-            self.unld_val_data = Corpus(unld_val_file, 'lm_' + self.arch_type, self.max_len, len(self.token2idx), self.pad_token_idx)
+            self.unld_val_data = Corpus(unld_val_file, 'lm')
 
     def get_data_for_classification(self):
-        return self.tr_data.X, self.val_data.X, self.te_data.X, self.tr_data.y, self.val_data.y, self.te_data.y
+        X_tr = add_pad_token(self.tr_data.X, self.pad_token_idx, self.max_len)
+        y_tr = np_utils.to_categorical(self.tr_data.y, len(self.label2idx))
+        X_val = add_pad_token(self.val_data.X, self.pad_token_idx, self.max_len)
+        y_val = np_utils.to_categorical(self.val_data.y, len(self.label2idx))
+        X_te = add_pad_token(self.te_data.X, self.pad_token_idx, self.max_len)
+        y_te = np_utils.to_categorical(self.te_data.y, len(self.label2idx))
+        return X_tr, X_val, X_te, y_tr, y_val, y_te
 
     def get_data_for_cross_validation(self, folds = 3):
+        X_tr, X_val, _, y_tr, y_val, _ = self.get_data_for_classification()
         # combine X_train, X_val and use the combined dataset for cross validation
-        X_train = np.concatenate((self.tr_data.X, self.val_data.X), axis = 0)
-        y_train = np.concatenate((self.tr_data.y, self.val_data.y), axis = 0)
+        X_train = np.concatenate((X_tr, X_val), axis = 0)
+        y_train = np.concatenate((y_tr, y_val), axis = 0)
         skf = StratifiedKFold(n_splits = folds)
         for train_index, test_index in skf.split(X_train, np.argmax(y_train, axis = 1)):
             yield X_train[train_index], X_train[test_index], y_train[train_index], y_train[test_index]
 
-    def flatten(self, X, context_size):
-        if X == None:
-            return None, None
-        X_tcs = []
-        y_tcs = []
-        for X_c in X:
-            # pad atleast context_size - 1 zeros in the beginning
-            X_c = X_c.tolist()
-            X_c = [0 for _ in xrange(context_size - 1)] + X_c
-            s = 0
-            while s + context_size < len(X_c):
-                X_tcs.append(X_c[s:s + context_size])
-                y_tcs.append(X_c[s + context_size])
-                s += 1
-
-        X_tcs = np.asarray(X_tcs)
-        y_tcs = np.asarray(y_tcs)
-        '''
-        https://github.com/fchollet/keras/issues/483
-        The trick to fix issue with the error expecting a 3D input when using
-        sparse_categorical_crossentropy is to format outputs in a sparse 3-dimensional way.
-        So instead of formatting the output like this:
-        y_indices_naive = [1,5,4300,...]
-        is should be formatted this way:
-        y_indices_naive = [[1,], [5,] , [4300,],...]
-        That will make Keras happy and it'll trained the model as expected.
-        '''
-        y_tcs = np.expand_dims(y_tcs, 1)
-        return X_tcs, y_tcs
-
     def get_data_for_lm(self, truncate = False, context_size = 10):
         if truncate:
             # After truncation, X will have shape [-1, context_size] and y will have shape [-1,1]
-            X_tr, y_tr = self.flatten(self.unld_tr_data.X, context_size)
-            X_val, y_val = self.flatten(self.unld_val_data.X, context_size)
+            X_tr, y_tr = flatten(self.unld_tr_data.X, context_size)
+            X_val, y_val = flatten(self.unld_val_data.X, context_size)
             return X_tr, X_val, y_tr, y_val
         else:
-            X_tr = self.unld_tr_data.X[:, :-1]
-            y_tr = self.unld_tr_data.X[:, 1:]
+            _X = add_pad_token(self.unld_tr_data.X, self.pad_token_idx, self.max_len)
+            X_tr = _X[:, :-1]
+            y_tr = _X[:, 1:]
             y_tr = np.expand_dims(y_tr, 2)
-            X_val = self.unld_val_data.X[:, :-1]
-            y_val = self.unld_val_data.X[:, 1:]
+            _X = add_pad_token(self.unld_val_data.X, self.pad_token_idx, self.max_len)
+            X_val = _X[:, :-1]
+            y_val = _X[:, 1:]
             y_val = np.expand_dims(y_val, 2)
             return X_tr, X_val, y_tr, y_val
+
+    def get_data_for_seq2seq(self):
+        pass
 
     def get_class_names(self):
 
