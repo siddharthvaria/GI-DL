@@ -114,7 +114,7 @@ def main(args):
     W, token2idx, label2idx, _, _, max_len = pickle.load(open(args['dictionaries_file'], "rb"))
     indices_file = read_data(args, token2idx, label2idx, args['test_file'], 'text', 'label', 'tweet_id', max_len)
     corpus = Corpus(indices_file, 'clf')
-    X_te = add_pad_token(corpus.X, token2idx['PAD'], max_len)
+    X_te = add_pad_token(corpus.X, token2idx['__PAD__'], max_len)
     if args['arch_type'] == 'lstm':
         print 'Creating LSTM classifier model . . .'
         clf = LSTMClassifier(W, args)

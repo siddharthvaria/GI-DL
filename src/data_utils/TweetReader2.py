@@ -125,7 +125,7 @@ class TweetCorpus:
 
         self.W, self.token2idx, self.label2idx, self.counts, self.class_weights, self.max_len = pickle.load(open(dictionaries_file, "rb"))
 
-        self.pad_token_idx = self.token2idx['PAD']
+        self.pad_token_idx = self.token2idx['__PAD__']
         self.idx2token = {v:k for k, v in self.token2idx.iteritems()}
 
         if train_file is None:

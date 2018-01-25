@@ -193,7 +193,7 @@ class TweetPreprocessor:
                 W[self.token2idx[token]] = np.random.uniform(-0.25, 0.25, emb_dim)
 
         # just make sure the embedding corresponding to padding token is al zero
-        W[self.token2idx['PAD']] = np.zeros(emb_dim, dtype = 'float32')
+        W[self.token2idx['__PAD__']] = np.zeros(emb_dim, dtype = 'float32')
 
         print 'Number of tokens in vocabulary:', len(self.token2idx.keys())
         print 'Number of token embeddings found:', (len(self.token2idx.keys()) - w2v_miss_count)
@@ -258,9 +258,9 @@ class TweetPreprocessor:
 
         # save the below tokens in the map
         _token2idx['__UNK__'] = idx_map[rare_word_id]
-        _token2idx['PAD'] = idx_map[0]
+        _token2idx['__PAD__'] = idx_map[0]
         _counts['__UNK__'] = rare_wc
-        _counts['PAD'] = idx2c[0]
+        _counts['__PAD__'] = idx2c[0]
 
         self.token2idx = _token2idx
         self.counts = _counts
