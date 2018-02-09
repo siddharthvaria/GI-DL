@@ -12,12 +12,10 @@ from data_utils.TweetReader2 import TweetCorpus
 import numpy as np
 import tensorflow as tf
 
-
 # from sklearn.manifold import TSNE
 # from tensorflow.contrib import learn
 # import cPickle as pickle
 # import matplotlib.pyplot as plt
-
 def get_ignore_list(corpus):
     # ignore all stopwords, all special markers __rt__,__url__ etc
     ignore_list = [corpus.pad_token_idx]  # for padding token
@@ -252,8 +250,12 @@ def train_clf(sess, model, args, corpus):
 
     # Define Training procedure
     global_step = tf.Variable(0, name = "global_step", trainable = False)
-    optimizer = tf.train.AdamOptimizer(1e-3)
+    optimizer = tf.train.AdamOptimizer(learning_rate = 1e-2)
+    # optimizer = tf.contrib.opt.NadamOptimizer()
+    # optimizer = tf.keras.optimizers.Nadam()
     grads_and_vars = optimizer.compute_gradients(model.clf_loss)
+    # grads = optimizer.get_gradients(model.clf_loss, tf.trainable_variables())
+    # grads_and_vars = zip(grads, tf.trainable_variables())
     train_op = optimizer.apply_gradients(grads_and_vars, global_step = global_step)
 
     # Keep track of gradient values and sparsity (optional)
@@ -390,10 +392,12 @@ def train_clf(sess, model, args, corpus):
 
 def main(args):
 
-    corpus = TweetCorpus('cnn', args['train_file'], args['val_file'], args['test_file'], args['unld_train_file'], args['unld_val_file'], args['dictionaries_file'])
+    corpus = TweetCorpus(args['train_file'], args['val_file'], args['test_file'], args['unld_train_file'], args['unld_val_file'], args['dictionaries_file'])
 
     ts = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     args['ts'] = ts
+
+    class_weights = [corpus.class_weights[i] for i in range(len(corpus.label2idx))]
 
     # print_hyper_params(args)
 
@@ -405,12 +409,12 @@ def main(args):
         with sess.as_default():
             cnn = CNN_Model(sequence_length = corpus.max_len,
                                num_classes = len(corpus.label2idx),
-                               vocab_size = len(corpus.token2idx) + 1,
+                               vocab_size = len(corpus.token2idx),
                                embedding_size = len(corpus.W[0]),
                                filter_sizes = [1, 2, 3, 4, 5],
                                num_filters = args['nfeature_maps'],
                                embeddings = corpus.W,
-                               num_sampled = 200)
+                               class_weights = class_weights)
 
             print 'List of trainable variables:'
             for i in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES):
@@ -440,7 +444,7 @@ def parse_arguments():
     parser.add_argument('-epochs', '--n_epochs', type = int, default = 30)
     parser.add_argument('-nfmaps', '--nfeature_maps', type = int, default = 200)
     parser.add_argument('-do', '--dropout', type = float, default = 0.5)
-    parser.add_argument('-bsz', '--batch_size', type = int, default = 64)
+    parser.add_argument('-bsz', '--batch_size', type = int, default = 256)
 
     args = vars(parser.parse_args())
 
