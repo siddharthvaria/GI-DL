@@ -7,101 +7,11 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import f1_score
 import time
 
+from Nadam import NadamOptimizer
 from cnn_lm_nce import CNN_Model
 from data_utils.TweetReader2 import TweetCorpus
 import numpy as np
 import tensorflow as tf
-
-# from sklearn.manifold import TSNE
-# from tensorflow.contrib import learn
-# import cPickle as pickle
-# import matplotlib.pyplot as plt
-def get_ignore_list(corpus):
-    # ignore all stopwords, all special markers __rt__,__url__ etc
-    ignore_list = [corpus.pad_token_idx]  # for padding token
-    stopwords = ['you', 'to', 'a', 'the', 'and', 'my',
-                 'me', 'Im', 'on', 'be', 'u', 'My', 'it',
-                 'in', 'You', 'that', 'up', 'for', 'A',
-                 'get', 'of', 'this', 'The', 'with', 'is',
-                 'got', 'just', 'they', 'On', 'Me', 'so',
-                 'To', 'was', 'but', 'all', 'no', 'U', 'do',
-                 'know', 'not', 'we', 'i', 'Up', 'go',
-                 'It', 'Be', 'he', 'This', 'We', 'If', 'at', 'No',
-                 'when', 'That', 'In', 'its', 'what', 'n',
-                 'been', 'can', 'if', 'Its', 'da', 'how',
-                 'your', 'yall', 'want', 'Just', 'For', 'she', 'I',
-                 'a', 'about', 'an', 'are', 'as', 'at', 'be', 'by',
-                 'for', 'from', 'how', 'in', 'is', 'it', 'of', 'on',
-                 'or', 'that', 'the', 'this', 'to', 'was', 'what',
-                 'when', 'where', 'who', 'will', 'with', 'the']
-    ignore_list.append(corpus.token2idx['__USER_HANDLE__'])
-    ignore_list.append(corpus.token2idx['__RT__'])
-    ignore_list.append(corpus.token2idx['__URL__'])
-    for _word in stopwords:
-        if _word in corpus.token2idx:
-            ignore_list.append(corpus.token2idx[_word])
-
-    return ignore_list
-
-def get_y(X, corpus, ignore_list = None):
-    _y = []
-    for x in X:
-        if x in ignore_list:
-            continue
-        _y.append(x)
-
-    if len(_y) == 0:
-        return None
-
-    _cnts = []
-
-    _sum = 0
-    for _y_i in _y:
-        _cnt = corpus.counts[corpus.idx2token[_y_i]]
-        _sum += _cnt
-        _cnts.append(_cnt)
-
-    _cnts = [float(_cnt) / _sum for _cnt in _cnts]
-    rsample = choice(_y, max(0, corpus.max_len - len(_y)), p = _cnts)
-
-    return _y + rsample.tolist()
-
-def get_data(corpus):
-    ignore_list = get_ignore_list(corpus)
-
-    X_tr = []
-    y_tr = []
-    for X_c in corpus.unld_tr_data.X:
-        _X_c = X_c.tolist()
-        X_c = [corpus.pad_token_idx for _ in xrange(corpus.max_len - len(_X_c))] + _X_c
-        _y_tr = get_y(X_c, corpus, ignore_list = ignore_list)
-        if _y_tr is not None:
-            X_tr.append(X_c)
-            y_tr.append(_y_tr)
-
-    X_tr = np.asarray(X_tr)
-    y_tr = np.asarray(y_tr)
-
-    X_val = []
-    y_val = []
-    for X_c in corpus.unld_val_data.X:
-        _X_c = X_c.tolist()
-        X_c = [corpus.pad_token_idx for _ in xrange(corpus.max_len - len(_X_c))] + _X_c
-        _y_val = get_y(X_c, corpus, ignore_list = ignore_list)
-        if _y_val is not None:
-            X_val.append(X_c)
-            y_val.append(_y_val)
-
-    X_val = np.asarray(X_val)
-    y_val = np.asarray(y_val)
-
-    print 'NCE LM training data stats:'
-    print 'X_tr.shape:', X_tr.shape
-    print 'X_val.shape:', X_val.shape
-    print 'y_tr.shape:', y_tr.shape
-    print 'y_val.shape:', y_val.shape
-
-    return X_tr, y_tr, X_val, y_val
 
 def batch_iter(data, batch_size, shuffle = False):
     """
@@ -121,136 +31,12 @@ def batch_iter(data, batch_size, shuffle = False):
         end_index = min((batch_num + 1) * batch_size, data_size)
         yield shuffled_data[start_index:end_index]
 
-def train_lm(sess, model, args, corpus):
-
-    # Define Training procedure
-    global_step = tf.Variable(0, name = "global_step", trainable = False)
-    optimizer = tf.train.AdamOptimizer(1e-3)
-    grads_and_vars = optimizer.compute_gradients(model.lm_loss)
-    train_op = optimizer.apply_gradients(grads_and_vars, global_step = global_step)
-
-    # Keep track of gradient values and sparsity (optional)
-    grad_summaries = []
-    for g, v in grads_and_vars:
-        if g is not None:
-            grad_hist_summary = tf.summary.histogram("{}/grad/hist".format(v.name), g)
-            sparsity_summary = tf.summary.scalar("{}/grad/sparsity".format(v.name), tf.nn.zero_fraction(g))
-            grad_summaries.append(grad_hist_summary)
-            grad_summaries.append(sparsity_summary)
-    grad_summaries_merged = tf.summary.merge(grad_summaries)
-
-    # Output directory for models and summaries
-    if os.path.isdir(os.path.join(args['model_save_dir'], "lm_runs")):
-        shutil.rmtree(os.path.join(args['model_save_dir'], "lm_runs"))
-    out_dir = os.path.abspath(os.path.join(args['model_save_dir'], "lm_runs"))
-    print("Writing to {}\n".format(out_dir))
-
-    # Summaries for loss and accuracy
-    loss_summary = tf.summary.scalar("loss", model.lm_loss)
-
-    # Train Summaries
-    train_summary_op = tf.summary.merge([loss_summary, grad_summaries_merged])
-    train_summary_dir = os.path.join(out_dir, "summaries", "train")
-    train_summary_writer = tf.summary.FileWriter(train_summary_dir, sess.graph)
-
-    # Dev summaries
-#             dev_summary_op = tf.summary.merge([loss_summary])
-#             dev_summary_dir = os.path.join(out_dir, "summaries", "dev")
-#             dev_summary_writer = tf.summary.FileWriter(dev_summary_dir, sess.graph)
-
-    # Checkpoint directory. Tensorflow assumes this directory already exists so we need to create it
-    checkpoint_dir = os.path.abspath(os.path.join(out_dir, "checkpoints"))
-    checkpoint_prefix = os.path.join(checkpoint_dir, "model")
-    if not os.path.exists(checkpoint_dir):
-        os.makedirs(checkpoint_dir)
-
-    saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES), max_to_keep = 1)
-
-    # Initialize all variables
-    sess.run(tf.global_variables_initializer())
-
-    def train_step(x_batch, y_batch):
-        """
-        A single training step based on the mode
-        """
-        feed_dict = {
-          model.input_x: x_batch,
-          model.input_y_lm: y_batch,
-          model.dropout_keep_prob: args['dropout']
-          # cnn.is_train: 1
-        }
-        _, step, summaries, loss = sess.run(
-            [train_op, global_step, train_summary_op, model.lm_loss],
-            feed_dict)
-        train_summary_writer.add_summary(summaries, step)
-
-        return loss
-
-    def dev_step(x_batch, y_batch):
-
-        """
-        Evaluates model on a dev set based on the mode
-        """
-        feed_dict = {
-          model.input_x: x_batch,
-          model.input_y_lm: y_batch,
-          model.dropout_keep_prob: 1.0
-          # cnn.is_train: 0
-        }
-        loss = sess.run(
-            [model.lm_loss],
-            feed_dict)
-        return loss[0]
-
-    X_tr, y_tr, X_val, y_val = get_data(corpus)
-    # Generate batches
-
-    best_val_loss = 1e6
-    patience = 3
-
-    for epoch in xrange(args['n_epochs']):
-        _tr_loss = 0
-        print 'Epoch %d:' % (epoch)
-        _start = time.time()
-        batches = batch_iter(
-            list(zip(X_tr, y_tr)), args['batch_size'], shuffle = True)
-        # Training loop. For each batch...
-        for batch in batches:
-            x_batch, y_batch = zip(*batch)
-            _tr_loss += train_step(x_batch, y_batch)
-
-        current_step = tf.train.global_step(sess, global_step)
-        tr_loss = _tr_loss / len(X_tr)
-        print 'Run time: %d s' % (time.time() - _start)
-        print 'Training Loss: %f' % (tr_loss)
-
-        val_batches = batch_iter(list(zip(X_val, y_val)), args['batch_size'])
-        _val_loss = 0
-        for batch in val_batches:
-            x_batch, y_batch = zip(*batch)
-            _val_loss += dev_step(x_batch, y_batch)
-
-        val_loss = _val_loss / len(X_val)
-        print 'Val Loss: %f' % (val_loss)
-
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            path = saver.save(sess, checkpoint_prefix, global_step = current_step)
-            print("Saved model checkpoint to {}\n".format(path))
-            patience = 3
-        else:
-            patience -= 1
-            print("\n")
-
-        if patience == 0:
-            print 'Early stopping . . .'
-            break
-
 def train_clf(sess, model, args, corpus):
 
     # Define Training procedure
     global_step = tf.Variable(0, name = "global_step", trainable = False)
-    optimizer = tf.train.AdamOptimizer(learning_rate = 1e-2)
+    # optimizer = tf.train.AdamOptimizer(learning_rate = 1e-2)
+    optimizer = NadamOptimizer()
     # optimizer = tf.contrib.opt.NadamOptimizer()
     # optimizer = tf.keras.optimizers.Nadam()
     grads_and_vars = optimizer.compute_gradients(model.clf_loss)
@@ -420,12 +206,8 @@ def main(args):
             for i in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES):
                 print i.name
 
-            if args['mode'] == 'lm':
-                # sess, model, args, corpus
-                train_lm(sess, cnn, args, corpus)
-            else:
-                # sess, model, args, corpus
-                train_clf(sess, cnn, args, corpus)
+            # sess, model, args, corpus
+            train_clf(sess, cnn, args, corpus)
 
 def parse_arguments():
 
@@ -437,7 +219,6 @@ def parse_arguments():
     parser.add_argument('-tst', '--test_file', type = str, help = 'labeled test file')
     parser.add_argument('-dict', '--dictionaries_file', type = str, help = 'pickled dictionary file')
     parser.add_argument('-sdir', '--model_save_dir', type = str, help = 'directory where trained model should be saved')
-    parser.add_argument('-md', '--mode', type = str, help = 'mode (clf,lm)')
     parser.add_argument('-w', '--pretrained_weights', type = str, default = None, help = 'Path to pretrained weights file')
     parser.add_argument('-unld_tr', '--unld_train_file', type = str, default = None)
     parser.add_argument('-unld_val', '--unld_val_file', type = str, default = None)

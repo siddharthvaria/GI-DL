@@ -43,7 +43,7 @@ class CNN_Model(object):
                 # Convolution Layer
                 filter_shape = [filter_size, embedding_size, 1, num_filters]
                 W = tf.Variable(tf.truncated_normal(filter_shape, stddev = 0.1), name = "W")
-                b = tf.Variable(tf.constant(0.1, shape = [num_filters]), name = "b")
+                b = tf.Variable(tf.constant(0.0, shape = [num_filters]), name = "b")
                 conv = tf.nn.conv2d(
                     self.embedded_seqs_expanded,
                     W,
@@ -73,27 +73,10 @@ class CNN_Model(object):
                                          activation = tf.nn.relu,
                                          name = 'dense',
                                          kernel_initializer = tf.contrib.layers.xavier_initializer(),
-                                         bias_initializer = tf.constant_initializer(0.1))
-
-        # Add dropout
-#         with tf.variable_scope("dropout"):
-#             self.h_out = tf.nn.dropout(self.h_out, self.dropout_keep_prob)
+                                         bias_initializer = tf.constant_initializer(0.0))
 
         # Calculate nce_loss for the language model
         with tf.variable_scope("lm_loss"):
-            # b_nce = tf.Variable(tf.constant(0.1, shape = [vocab_size]), name = "b_nce")
-
-#             nce_loss = tf.nn.nce_loss(
-#                 weights = W_nce,
-#                 biases = b_nce,
-#                 labels = self.input_y_lm,
-#                 inputs = self.h_out,
-#                 num_sampled = num_sampled,
-#                 num_classes = vocab_size,
-#                 num_true = sequence_length,
-#                 partition_strategy = 'div',
-#                 name = 'nce_loss'
-#                 )
             W_nce = tf.get_variable(
                 "W_nce",
                 shape = [vocab_size, embedding_size],
@@ -117,7 +100,7 @@ class CNN_Model(object):
                 "W_cce",
                 shape = [embedding_size, num_classes],
                 initializer = tf.contrib.layers.xavier_initializer())
-            b = tf.Variable(tf.constant(0.1, shape = [num_classes]), name = "b_cce")
+            b = tf.Variable(tf.constant(0.0, shape = [num_classes]), name = "b_cce")
             self.scores = tf.nn.xw_plus_b(self.h_out, W, b, name = "scores")
             self.probabilities = tf.nn.softmax(self.scores, 1, name = "probabilities")
 
