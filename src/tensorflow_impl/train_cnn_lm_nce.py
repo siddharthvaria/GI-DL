@@ -6,10 +6,12 @@ from sklearn.feature_extraction.text import TfidfTransformer
 import time
 import torch
 
+from Nadam import NadamOptimizer
 from cnn_lm_nce import CNN_Model
 from data_utils.TweetReader2 import TweetCorpus
 import numpy as np
 import tensorflow as tf
+
 
 def get_stopwords(stop_words_file):
 
@@ -172,7 +174,8 @@ def train_lm(sess, model, args, corpus):
 
     # Define Training procedure
     global_step = tf.Variable(0, name = "global_step", trainable = False)
-    optimizer = tf.train.AdamOptimizer(1e-3)
+    # optimizer = tf.train.AdamOptimizer(1e-3)
+    optimizer = NadamOptimizer()
     grads_and_vars = optimizer.compute_gradients(model.lm_loss)
     train_op = optimizer.apply_gradients(grads_and_vars, global_step = global_step)
 

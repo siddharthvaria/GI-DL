@@ -37,14 +37,8 @@ def train_clf(sess, model, args, corpus):
     global_step = tf.Variable(0, name = "global_step", trainable = False)
     # optimizer = tf.train.AdamOptimizer(learning_rate = 1e-2)
     optimizer = NadamOptimizer()
-    # optimizer = tf.contrib.opt.NadamOptimizer()
-    # optimizer = tf.keras.optimizers.Nadam()
     grads_and_vars = optimizer.compute_gradients(model.clf_loss)
-    # grads = optimizer.get_gradients(model.clf_loss, tf.trainable_variables())
-    # grads_and_vars = zip(grads, tf.trainable_variables())
     train_op = optimizer.apply_gradients(grads_and_vars, global_step = global_step)
-
-    # Keep track of gradient values and sparsity (optional)
     grad_summaries = []
     for g, v in grads_and_vars:
         if g is not None:
