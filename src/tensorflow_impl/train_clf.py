@@ -31,6 +31,22 @@ def batch_iter(data, batch_size, shuffle = False):
         end_index = min((batch_num + 1) * batch_size, data_size)
         yield shuffled_data[start_index:end_index]
 
+def dev_step(sess, model, x_batch, y_batch):
+
+    """
+    Evaluates model on a dev set based on the mode
+    """
+    feed_dict = {
+      model.input_x: x_batch,
+      model.input_y_clf: y_batch,
+      model.dropout_keep_prob: 1.0
+      # cnn.is_train: 0
+    }
+    loss, probabilities = sess.run(
+        [model.clf_loss, model.probabilities],
+        feed_dict)
+    return loss, probabilities
+
 def train_clf(sess, model, args, corpus):
 
     # Define Training procedure
@@ -99,22 +115,6 @@ def train_clf(sess, model, args, corpus):
 
         return loss, probabilities
 
-    def dev_step(x_batch, y_batch):
-
-        """
-        Evaluates model on a dev set based on the mode
-        """
-        feed_dict = {
-          model.input_x: x_batch,
-          model.input_y_clf: y_batch,
-          model.dropout_keep_prob: 1.0
-          # cnn.is_train: 0
-        }
-        loss, probabilities = sess.run(
-            [model.clf_loss, model.probabilities],
-            feed_dict)
-        return loss, probabilities
-
     X_tr, X_val, X_test, y_tr, y_val, y_test = corpus.get_data_for_classification()
 
     best_val_f = 0
@@ -145,7 +145,7 @@ def train_clf(sess, model, args, corpus):
         val_probabilities = []
         for batch in val_batches:
             x_batch, y_batch = zip(*batch)
-            _loss, probabilities = dev_step(x_batch, y_batch)
+            _loss, probabilities = dev_step(sess, model, x_batch, y_batch)
             _val_loss += _loss
             val_probabilities.extend(probabilities)
 
@@ -172,7 +172,7 @@ def train_clf(sess, model, args, corpus):
 
 def main(args):
 
-    corpus = TweetCorpus(args['train_file'], args['val_file'], args['test_file'], args['unld_train_file'], args['unld_val_file'], args['dictionaries_file'])
+    corpus = TweetCorpus(train_file = args['train_file'], val_file = args['val_file'], test_file = args['test_file'] , dictionaries_file = args['dictionaries_file'])
 
     ts = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     args['ts'] = ts
@@ -214,8 +214,6 @@ def parse_arguments():
     parser.add_argument('-dict', '--dictionaries_file', type = str, help = 'pickled dictionary file')
     parser.add_argument('-sdir', '--model_save_dir', type = str, help = 'directory where trained model should be saved')
     parser.add_argument('-w', '--pretrained_weights', type = str, default = None, help = 'Path to pretrained weights file')
-    parser.add_argument('-unld_tr', '--unld_train_file', type = str, default = None)
-    parser.add_argument('-unld_val', '--unld_val_file', type = str, default = None)
     parser.add_argument('-epochs', '--n_epochs', type = int, default = 30)
     parser.add_argument('-nfmaps', '--nfeature_maps', type = int, default = 200)
     parser.add_argument('-do', '--dropout', type = float, default = 0.5)

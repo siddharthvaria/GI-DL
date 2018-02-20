@@ -154,12 +154,25 @@ class TweetCorpus:
             self.unld_val_data = Corpus(unld_val_file, 'lm')
 
     def get_data_for_classification(self):
-        X_tr = add_pad_token(self.tr_data.X, self.pad_token_idx, self.max_len)
-        y_tr = np_utils.to_categorical(self.tr_data.y, len(self.label2idx))
-        X_val = add_pad_token(self.val_data.X, self.pad_token_idx, self.max_len)
-        y_val = np_utils.to_categorical(self.val_data.y, len(self.label2idx))
-        X_te = add_pad_token(self.te_data.X, self.pad_token_idx, self.max_len)
-        y_te = np_utils.to_categorical(self.te_data.y, len(self.label2idx))
+
+        X_tr = None
+        y_tr = None
+        if self.tr_data is not None:
+            X_tr = add_pad_token(self.tr_data.X, self.pad_token_idx, self.max_len)
+            y_tr = np_utils.to_categorical(self.tr_data.y, len(self.label2idx))
+
+        X_val = None
+        y_val = None
+        if self.val_data is not None:
+            X_val = add_pad_token(self.val_data.X, self.pad_token_idx, self.max_len)
+            y_val = np_utils.to_categorical(self.val_data.y, len(self.label2idx))
+
+        X_te = None
+        y_te = None
+        if self.te_data is not None:
+            X_te = add_pad_token(self.te_data.X, self.pad_token_idx, self.max_len)
+            y_te = np_utils.to_categorical(self.te_data.y, len(self.label2idx))
+
         return X_tr, X_val, X_te, y_tr, y_val, y_te
 
     def get_data_for_cross_validation(self, folds = 3):
