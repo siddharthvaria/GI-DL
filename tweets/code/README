@@ -1,8 +1,0 @@
-Hello! This readme serves as a basic overview of the contents of this folder.
-
-clean.py: takes a csv file, cleans it, and converts it to tsv
-embedder.py: for external use; provides interface to word embeddings
-label.py: takes labeled data, cleans, and converts to tsv
-model.py: generates word2vec model from a tsv file
-rnn.py: deprecated (for now); rnn classifier that directly uses word embeddings
-util.py: miscellaneous functions
