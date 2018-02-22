@@ -1,9 +1,0 @@
-Using Theano backend.
-Traceback (most recent call last):
-  File "TernaryClassifier.py", line 180, in <module>
-    main(parse_arguments())
-  File "TernaryClassifier.py", line 106, in main
-    corpus = TweetCorpus(args['train_file'], args['val_file'], args['test_file'], args['unld_train_file'], args['unld_val_file'], None)# args['dictionaries_file'])
-  File "/proj/nlpdisk3/nlpusers/feitzin/gang-intervention/code/combined/GI-DL/src/data_utils/TweetReader2.py", line 94, in __init__
-    self.W, self.char2idx, self.label2idx, self.class_weights, self.max_len = pickle.load(open(dictionaries_file, "rb"))
-TypeError: coercing to Unicode: need string or buffer, NoneType found
