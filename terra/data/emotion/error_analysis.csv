@@ -1,0 +1,46 @@
+DATE,Words are scored?,Should be scored but aren't?,correct scoring?,incorrect scoring?,,Wi: Words are scored?,Wi: Should be scored but aren't?,Wi: correct scoring?,Wi: incorrect scoring?
+3/15/14 16:29,o;c get; put; ,👿; STL; EBT; “get put on a T”,"get, put ",o??? probs shouldn't be scored,,get; put; t; 👿,"stl, ebt",get; put;👿,t: uses def for letter 't'
+3/15/14 18:05,call; heat; him; come; deep; as; fuck,🔫;  ,most of them,"fuck – positive scoring here, though not in most of these tweets; 💯 ;💥  ",,have; ki; come; heat; come; sneaking; tw; deep; ass; fuck; 🏃; 💥; 🔫; 💯 ,n/a,have; come; deep; ; 🏃; 💥; 🔫; 💯 ,ki: gets mapped to in?; sneak: has def but score is off; ass: mapped to as; fuck: too high ee  
+3/15/14 18:22,crack; warrant; stay; way; need; sum; cash; I'd; slide,cray; mf; lil; bro,crack; warrant; stay; need; cash,sum – mapped to wrong sense,,cray; crack; warrant; mf; tryna; stay; way; lil; bro; need; sum; cash; I'd; slide,n/a,warrant; mf; lil?; bro; cash ,“cray crack”: actually a name??
+3/15/14 19:45,niggas; broke; 😂; 😸; 🙅; 💰; 💸 ,fuckin;,😸; 💸; 💰  ,😂; niggas; ,,niggas; fuckin; broke; 😂; 😸; 🙅; 💰; 💸,n/a,broke; 😂; 😸; 🙅; 💰; 💸,"niggas: (too low ee?? used more as people here); fuckin (again, ee too high)"
+3/15/14 19:48,free; gang; 🔓;🙏  ,rip (lexicon for this),free,gang – has low ee score but should be higher in this context; the open lock emoji shuld have a higher ee too,switched to abs scoring,free; gang; rip; 🔓; 🙏 ,n/a,free; rip; 🔓; 🙏,gang
+3/15/14 20:11,"why, deck, ask, 😈",🔫 (not in DAL – extend w/ wordnet should fix); hating; shootaz; TY; bitch,,😈 - ee lower,,niggas; hating; kno; why; cuz; deck; bitch; ask; ty; 🔫; 😈,shootaz,"hating? (min ee score is good, not max); kno; why; 🔫;  😈","ty; bitch (again, min is okayish, max nah)"
+3/15/14 22:14,family; first; put; shirt; 💯,s/o; fam,family; first,💯- aa should be higher?? pretty common tho,,2; fam; dwn; dere; sirc; family; cum; first; I'd; put; nigga; shirt;💯 ,s/o,to; fam; family; first,sirc (identified as an incorrect acronym); “put... on a shirt” the overall meaning of this phrase is missed
+3/15/14 23:07,where; crack; been; know; his; been; low; back,tf; lil; ass; bail,"low, crack",,,where; tf; cray; crack; been; know; his; lil; ass; low; bail; back,n/a,where; been?; know; lil; low; bail (possibly correct def? Unless I'm missing some context here),tf; “cray crack”; ass; 
+3/16/14 2:48,see; fuck; smoke; 😈,"opp, gne",smoke,"fuck, 😈",,see; opp; fuck; smoke; em; 😈,gne??,opp; see?; smoke; 😈,fuck
+3/16/14 2:49,see 3/16/14 19:48,,,,,see 3/16/14 19:48,,,
+3/16/14 3:22,😤; 😡,"stp, bugging, bitch",,😤- lower ee; 😡 - higher aa probs ,,stp; bugging; bitch; 😡; 😤,,😡,😤;stp (wrong def); bugging(aa too high tho correct def); bitch( wrong def)
+3/16/14 17:30,see 3/16/14 19:48 + I'd; same; 🙅; 😤; 💯 ,shyt; neva,free; ,same??; 🙅- ee lower;😤 ,,,,,
+3/16/14 17:37,get; caught; block; take; spot,“800 (block)”; lame; ass; lil; Dnt ,caught,,,,,,
+3/16/14 17:40,🙏 ,Rip; Boyz; BT; Tooka,🙏 ,,,,,,
+3/16/14 17:42,police; work; 🙅; 👮; 🚨; 🚔; 😷; 💯,stp; snitching; goofy; ass,police emojis; “police”,😷: way too high ee,,,,,
+3/16/14 17:52,now; 👀; 🐍 ,rip; shordty; ,🐍(tho ee could be lower),,,,,,
+3/16/14 18:15,full,800 (block); “wanna Be's”,,full (b/c in this context it's a negative),,,,,
+3/16/14 18:21,call; heat; him; come; deep; as; fuck,k.i; bub; tw,him; come;,call (super pos scoring but not sure why); fuck (again); heat ??,,,,,
+3/16/14 19:47,worst; part; about; life; die; curse; soul,,,,,,,,
+3/17/14 3:45,hold; back; pain; only; makes; hurt; more; 🙏; 💯,tryna,🙏; pain; hurt,hold – has high ee,,,,,
+3/17/14 4:02,lost; sum; fuck; around; type; 💯,shyt; niggaz; 👿,lost; around,fuck- ee too high,,,,,
+3/17/14 4:21,need; somebody; besides; streets; show; 💯,love (why???); lil;,need,,,,,,
+3/17/14 4:23,💰; 🙏,rip; cashout,both emojis,,,,,,
+3/17/14 4:24,''”,rip (lexicon for this),“”,,,,,,
+3/17/14 4:26,lord; controls; battle; everyone; think; power; over; free; gang; 🔓; 🙏; 💯,got (sw?); rip,🙏; lord; battle; free,🔓: lower aa? ,,,,,
+3/17/14 4:49,🙏; 😓,rip; lil; bro,🙏,😓 - needs much lower ee!!,,,,,
+3/17/14 9:07,make; real; life; 😈; 💯,ain't; shyt; real; life; kidd,real; life?,😈,,,,,
+3/17/14 9:16,free; face; let; gang; 🔓,blink; icey; ,free; ,🔓; gang,,,,,
+3/17/14 9:44,baby; 🙏,rip (lexicon for this),baby; 🙏,,,,,,
+3/17/14 9:50,want; I'd; driver; while; drive; 💯,lil; bitch; ,want; driver; drive?,💯,,,,,
+3/17/14 9:55,fuck; understand; life; live; 💯,bitch; dnt; ,understand; live,"fuck – positive scoring here, though not in most of these tweets; 💯 ;💥  ",,,,,
+3/17/14 10:08,county,pussy; ass; niggas; pc; 👿,county?,,,,,,
+3/17/14 10:20,man; get; sum; boss,mf; shyt; fr (for real),,boss: ee too low,,,,,
+3/17/14 12:00,,rip (lexicon for this),,,,,,,
+3/17/14 12:03,free; gang; 🔓;🙏  ,bitch,🙏; free,🔓: lower aa? ,,,,,
+3/17/14 12:44,baby; 🙏; 😘,gm; rip,baby; 🙏;  😘,,,,,,
+3/17/14 15:28,send; white; boy; year; old; black; girl; went; missing; 😤 ,amber; alerts; shyt,missing; year; send,😤- aa much too high; girl (aa too low),,,,,
+3/17/14 15:32,,neva; hml; doe; lil; nigga,,,,,,,
+3/17/14 18:49,beat; fuck; sum; told; fuck,outta; goofys; talm; amg; mac,beat; ,"fuck – positive scoring here, though not pos. use in most of these tweets",,,,,
+3/18/14 15:11,gang,rip; tutu?; 👿,,gang has too low aa,,,,,
+3/18/14 21:33,young; still; getting; shot; babies; still; dying; 🙏,niggas,still; shot; babies; dying; 🙏 ,,,,,,
+3/18/14 22:49,🏃; 💨; 🚨; 🚔 ; 🚓; 💯,pop; smack; gne; bitch,police emojis,,,,,,
+3/18/14 22:51,broke; get; money; 😈,ass; lil; niggas;  💪,money,(see above),,,,,
+3/18/14 22:54,rule; silence; talk; much; 😶; 😷; 💯 ,secrecy; niggas; 2; 1,silence; ,😶 (should be neutral); 😷: aa should be lower,,,,,
+3/19/14 14:18,gun; say; wouldn't; shoot; quit; fucking,jammed; mf; ,gun; shoot; quit,,,,,,

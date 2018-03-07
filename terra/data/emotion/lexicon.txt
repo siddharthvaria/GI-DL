@@ -1,0 +1,2441 @@
+© : sign
+
+® : sign
+
+‼ : excited
+
+⁉ : excitement
+
+™ : sign
+
+ℹ : information
+
+↔ : arrow
+
+↕ : arrow
+
+↖ : arrow
+
+↗ : arrow
+
+↘ : arrow
+
+↙ : arrow
+
+↩ : arrow
+
+↪ : arrow
+
+⌚ : clock
+
+⌛ : clock
+
+⌨ : keyboard
+
+⏏ : remove
+
+⏩ : right
+
+⏪ : left
+
+⏫ : up
+
+⏬ : down
+
+⏭ : right
+
+⏮ : left
+
+⏯ : right
+
+⏰ : wake
+
+⏱ : clock
+
+⏲ : clock
+
+⏳ : clock
+
+⏸ : symbol
+
+⏹ : symbol
+
+⏺ : symbol
+
+Ⓜ : symbol
+
+▪ : square
+
+▫ : square
+
+▶ : right
+
+◀ : left
+
+◻ : square
+
+◼ : square
+
+◽ : square
+
+◾ : square
+
+☀ : sun
+
+☁ : cloud
+
+☂ : rain
+
+☃ : snow
+
+☄ : moving star
+
+☎ : telephone
+
+☑ : ballot
+
+☔ : rain
+
+☕ : coffee
+
+☘ : luck
+
+☝ : achieved
+
+☠ : secret
+
+☢ : radioactive
+
+☣ : hazard
+
+☦ : religion
+
+☪ : religion
+
+☮ : peace
+
+☯ : zen
+
+☸ : religion
+
+☹ : frown
+
+☺ : smile
+
+♈ : spiritual
+
+♉ : spiritual
+
+♊ : spiritual
+
+♋ : spiritual
+
+♌ : spiritual
+
+♍ : spiritual
+
+♎ : spiritual
+
+♏ : spiritual
+
+♐ : spiritual
+
+♑ : spiritual
+
+♒ : spiritual
+
+♓ : spiritual
+
+♠ : cards
+
+♣ : cards
+
+♥ : cards
+
+♦ : cards
+
+♨ : hot
+
+♻ : symbol
+
+♿ : symbol
+
+⚒ : engineer 
+
+⚓ : anchor
+
+⚔ : weapons
+
+⚖ : justice
+
+⚗ : chemistry
+
+⚙ : gear
+
+⚛ : atom
+
+⚜ : royal
+
+⚠ : warning
+
+⚡ : lightning
+
+⚪ : circle
+
+⚫ : circle
+
+⚰ : coffins
+
+⚱ : funeral
+
+⚽ : sport
+
+⚾ : baseball
+
+⛄ : snow
+
+⛅ : sun cloud
+
+⛈ : thunder
+
+⛎ : greek snake
+
+⛏ : pick
+
+⛑ : cross
+
+⛓ : chains
+
+⛔ : no
+
+⛩ : japanese
+
+⛪ : churches
+
+⛰ : mountain
+
+⛱ : rain
+
+⛲ : fountain
+
+⛳ : flag in hole
+
+⛴ : boat
+
+⛵ : sailboat
+
+⛷ : skied
+
+⛸ : icy skate
+
+⛹ : sport
+
+⛺ : tent
+
+⛽ : fuel
+
+✂ : cut
+
+✅ : check
+
+✈ : airplanes
+
+✉ : envelope
+
+✊ : raised
+
+✋ : raised
+
+✌ : victory
+
+✍ : writing
+
+✏ : pencil
+
+✒ : pen
+
+✔ : good
+
+✖ : multiply
+
+✝ : religion
+
+✡ : religion
+
+✨ : sparks
+
+✳ : star
+
+✴ : star
+
+❄ : snowf
+
+❇ : spark
+
+❌ : cross
+
+❎ : negative
+
+❓ : question
+
+❔ : question
+
+❕ : excited
+
+❗ : excited
+
+❣ : excited
+
+❤ : heart
+
+➕ : plus
+
+➖ : mathmatics
+
+➗ : division
+
+➡ : arrow
+
+➰ : loop
+
+➿ : loop
+
+⤴ : up
+
+⤵ : down
+
+⬅ : left
+
+⬆ : up
+
+⬇ : down
+
+⬛ : square
+
+⬜ : square
+
+⭐ : star
+
+⭕ : circle
+
+〰 : waving
+
+〽 : down
+
+㊗ : circle
+
+㊙ : circle
+
+🀄 : game
+
+🃏 : joker
+
+🅰 : a
+
+🅱 : b
+
+🅾 : o
+
+🅿 : p
+
+🆎 : ab
+
+🆑 : cl
+
+🆒 : cool
+
+🆓 : free
+
+🆔 : id
+
+🆕 : new
+
+🆖 : ng
+
+🆗 : ok
+
+🆘 : sos
+
+🆙 : up
+
+🆚 : switch
+
+🈁 : symbol
+
+🈂 : symbol
+
+🈚 : symbol
+
+🈯 : symbol
+
+🈲 : symbol
+
+🈳 : symbol
+
+🈴 : symbol
+
+🈵 : symbol
+
+🈶 : symbol
+
+🈷 : symbol
+
+🈸 : symbol
+
+🈹 : symbol
+
+🈺 : symbol
+
+🉐 : symbol
+
+🉑 : symbol
+
+🌀 : whirling
+
+🌁 : foggy
+
+🌂 : closed
+
+🌃 : night stars
+
+🌄 : sunrise mountains
+
+🌅 : sunrise
+
+🌆 : city dusk
+
+🌇 : sunset
+
+🌈 : rainbow
+
+🌉 : bridge
+
+🌊 : water wave
+
+🌋 : volcano
+
+🌌 : stars
+
+🌍 : earth
+
+🌎 : earth
+
+🌏 : earth 
+
+🌐 : globe with meridians
+
+🌑 : moon
+
+🌒 : moon
+
+🌓 : moon
+
+🌔 : moon
+
+🌕 : moon
+
+🌖 : moon
+
+🌗 : moon
+
+🌘 : moon
+
+🌙 : moon
+
+🌚 : moon face
+
+🌛 : moon face
+
+🌜 : moon face
+
+🌝 : moon face
+
+🌞 : sun face
+
+🌟 : glow star
+
+🌠 : moving star
+
+🌡 : temperature
+
+🌤 : sun cloud
+
+🌥 : sun cloud
+
+🌦 : sun cloud rain
+
+🌧 : cloud rain
+
+🌨 : cloud snow
+
+🌩 : cloud lightning
+
+🌪 : cloud storm
+
+🌫 : fog
+
+🌬 : wind 
+
+🌭 : food
+
+🌮 : food
+
+🌯 : food
+
+🌰 : seed
+
+🌱 : seed
+
+🌲 : tree
+
+🌳 : tree
+
+🌴 : tree
+
+🌵 : plant
+
+🌶 : pepper
+
+🌷 : flower
+
+🌸 : flower
+
+🌹 : rose
+
+🌺 : flower
+
+🌻 : flower
+
+🌼 : flower
+
+🌽 : corn
+
+🌾 : rice
+
+🌿 : plant
+
+🍀 : lucky
+
+🍁 : leaf
+
+🍂 : leaf
+
+🍃 : leaf
+
+🍄 : mushroom
+
+🍅 : tomato
+
+🍆 : aubergine
+
+🍇 : grapes
+
+🍈 : melon
+
+🍉 : watermelon
+
+🍊 : tangerine
+
+🍋 : lemon
+
+🍌 : banana
+
+🍍 : pineapple
+
+🍎 : red apple
+
+🍏 : green apple
+
+🍐 : pear
+
+🍑 : peach
+
+🍒 : cherries
+
+🍓 : strawberry
+
+🍔 : hamburger
+
+🍕 : slice of pizza
+
+🍖 : meat on bone
+
+🍗 : poultry leg
+
+🍘 : rice cracker
+
+🍙 : rice ball
+
+🍚 : cooked rice
+
+🍛 : curry and rice
+
+🍜 : steaming bowl
+
+🍝 : spaghetti
+
+🍞 : bread
+
+🍟 : french fries
+
+🍠 : roasted sweet potato
+
+🍡 : dango
+
+🍢 : oden
+
+🍣 : sushi
+
+🍤 : fried shrimp
+
+🍥 : fish cake with swirl design
+
+🍦 : soft ice cream
+
+🍧 : shaved ice
+
+🍨 : ice cream
+
+🍩 : doughnut
+
+🍪 : cookie
+
+🍫 : chocolate bar
+
+🍬 : candy
+
+🍭 : lollipop
+
+🍮 : custard
+
+🍯 : honey pot
+
+🍰 : shortcake
+
+🍱 : bento box
+
+🍲 : pot of food
+
+🍳 : cooking
+
+🍴 : fork and knife
+
+🍵 : teac
+
+🍶 : sake bottle and cup
+
+🍷 : wine glass
+
+🍸 : cocktail glass
+
+🍹 : tropical drink
+
+🍺 : beer
+
+🍻 : beer
+
+🍼 : baby
+
+🍽 : fork and knife with plate
+
+🍾 : bottle with popping cork
+
+🍿 : popcorn
+
+🎀 : ribbon
+
+🎁 : wrapped present
+
+🎂 : birthday
+
+🎃 : jack-o-lantern
+
+🎄 : christmas tree
+
+🎅 : father christmas
+
+🎆 : fireworks
+
+🎇 : firework sparkler
+
+🎈 : balloon
+
+🎉 : party popper
+
+🎊 : confetti ball
+
+🎋 : tanabata tree
+
+🎌 : crossed flags
+
+🎍 : pine decoration
+
+🎎 : japanese dolls
+
+🎏 : carp streamer
+
+🎐 : wind chime
+
+🎑 : moon viewing ceremony
+
+🎒 : school satchel
+
+🎓 : graduation cap
+
+🎖 : military medal
+
+🎗 : reminder ribbon
+
+🎙 : studio microphone
+
+🎚 : level slider
+
+🎛 : control knobs
+
+🎞 : film frames
+
+🎟 : admission tickets
+
+🎠 : carousel horse
+
+🎡 : ferris wheel
+
+🎢 : roller coaster
+
+🎣 : fishing pole and fish
+
+🎤 : microphone
+
+🎥 : movie camera
+
+🎦 : cinema
+
+🎧 : headphone
+
+🎨 : artist palette
+
+🎩 : top hat
+
+🎪 : circus tent
+
+🎫 : ticket
+
+🎬 : clapper board
+
+🎭 : performing arts
+
+🎮 : video game
+
+🎯 : direct hit
+
+🎰 : slot machine
+
+🎱 : billiards
+
+🎲 : game die
+
+🎳 : bowling
+
+🎴 : flower playing cards
+
+🎵 : musical note
+
+🎶 : multiple musical notes
+
+🎷 : saxophone
+
+🎸 : guitar
+
+🎹 : musical keyboard
+
+🎺 : trumpet
+
+🎻 : violin
+
+🎼 : musical score
+
+🎽 : running shirt with sash
+
+🎾 : tennis racquet and ball
+
+🎿 : ski and ski boot
+
+🏀 : basketball and hoop
+
+🏁 : chequered flag
+
+🏂 : snowboarder
+
+🏃 : runner
+
+🏄 : surfer
+
+🏅 : sports medal
+
+🏆 : trophy
+
+🏇 : horse racing
+
+🏈 : american football
+
+🏉 : rugby football
+
+🏊 : swimmer
+
+🏋 : weight lifter
+
+🏌 : golfer
+
+🏍 : racing motorcycle
+
+🏎 : racing car
+
+🏏 : cricket bat and ball
+
+🏐 : volleyball
+
+🏑 : field hockey stick and ball
+
+🏒 : ice hockey stick and puck
+
+🏓 : table tennis paddle and ball
+
+🏔 : snow capped mountain
+
+🏕 : camping
+
+🏖 : beach with umbrella
+
+🏗 : building construction
+
+🏘 : house buildings
+
+🏙 : cityscape
+
+🏚 : derelict house building
+
+🏛 : classical building
+
+🏜 : desert
+
+🏝 : desert island
+
+🏞 : national park
+
+🏟 : stadium
+
+🏠 : house building
+
+🏡 : house with garden
+
+🏢 : office building
+
+🏣 : japanese post office
+
+🏤 : european post office
+
+🏥 : hospital
+
+🏦 : bank
+
+🏧 : automated teller machine
+
+🏨 : hotel
+
+🏩 : love hotel
+
+🏪 : convenience store
+
+🏫 : school
+
+🏬 : department store
+
+🏭 : factory
+
+🏮 : izakaya lantern
+
+🏯 : japanese castle
+
+🏰 : european castle
+
+🏳 : waving white flag
+
+🏴 : waving black flag
+
+🏵 : rosette
+
+🏷 : label
+
+🏸 : badminton racquet and shuttlecock
+
+🏹 : bow and arrow
+
+🏺 : amphora
+
+🏻 : emoji modifier fitzpatrick type-1-2
+
+🏼 : emoji modifier fitzpatrick type-3
+
+🏽 : emoji modifier fitzpatrick type-4
+
+🏾 : emoji modifier fitzpatrick type-5
+
+🏿 : emoji modifier fitzpatrick type-6
+
+🐀 : rat
+
+🐁 : mouse
+
+🐂 : ox
+
+🐃 : water buffalo
+
+🐄 : cow
+
+🐅 : tiger
+
+🐆 : leopard
+
+🐇 : rabbit
+
+🐈 : cat
+
+🐉 : dragon
+
+🐊 : crocodile
+
+🐋 : whale
+
+🐌 : snail
+
+🐍 : snake
+
+🐎 : horse
+
+🐏 : ram
+
+🐐 : goat
+
+🐑 : sheep
+
+🐒 : monkey
+
+🐓 : rooster
+
+🐔 : chicken
+
+🐕 : dog
+
+🐖 : pig
+
+🐗 : boar
+
+🐘 : elephant
+
+🐙 : octopus
+
+🐚 : spiral shell
+
+🐛 : bug
+
+🐜 : ant
+
+🐝 : honeybee
+
+🐞 : lady beetle
+
+🐟 : fish
+
+🐠 : tropical fish
+
+🐡 : blowfish
+
+🐢 : turtle
+
+🐣 : hatching chick
+
+🐤 : baby chick
+
+🐥 : front-facing baby chick
+
+🐦 : bird
+
+🐧 : penguin
+
+🐨 : koala
+
+🐩 : dog
+
+🐪 : camel
+
+🐫 : camel
+
+🐬 : dolphin
+
+🐭 : mouse
+
+🐮 : cow
+
+🐯 : tiger
+
+🐰 : rabbit
+
+🐱 : cat
+
+🐲 : dragon
+
+🐳 : whale
+
+🐴 : horse
+
+🐵 : monkey
+
+🐶 : dog
+
+🐷 : pig
+
+🐸 : frog
+
+🐹 : hamster face
+
+🐺 : wolf face
+
+🐻 : bear face
+
+🐼 : panda face
+
+🐽 : pig nose
+
+🐾 : paw
+
+🐿 : chipmunk
+
+👀 : eyes
+
+👁 : eye
+
+👂 : ear
+
+👃 : nose
+
+👄 : mouth
+
+👅 : tongue
+
+👆 : up
+
+👇 : down
+
+👈 : left
+
+👉 : right
+
+👊 : fist
+
+👋 : waving
+
+👌 : ok
+
+👍 : up
+
+👎 : down
+
+👏 : clapping
+
+👐 : open
+
+👑 : royal
+
+👒 : womans hat
+
+👓 : eyeglasses
+
+👔 : necktie
+
+👕 : t-shirt
+
+👖 : jeans
+
+👗 : dress
+
+👘 : kimono
+
+👙 : bikini
+
+👚 : blouse
+
+👛 : purse
+
+👜 : purse
+
+👝 : pouch
+
+👞 : shoe
+
+👟 : sneaker
+
+👠 : heel
+
+👡 : shoe
+
+👢 : shoe
+
+👣 : footprints
+
+👤 : silhouette
+
+👥 : silhouette
+
+👦 : boy
+
+👧 : girl
+
+👨 : man
+
+👩 : woman
+
+👪 : family
+
+👫 : lovers
+
+👬 : lovers
+
+👭 : lovers
+
+👮 : police
+
+👯 : women dance
+
+👰 : bride
+
+👱 : man
+
+👲 : hat
+
+👳 : turban
+
+👴 : old
+
+👵 : old
+
+👶 : baby
+
+👷 : construction
+
+👸 : princess
+
+👹 : monster
+
+👺 : monster
+
+👻 : ghost
+
+👼 : angel
+
+👽 : alien
+
+👾 : monster
+
+👿 : mad
+
+💀 : death
+
+💁 : true
+
+💂 : guard
+
+💃 : dancer
+
+💄 : lipstick
+
+💅 : nail polish
+
+💆 : face massage
+
+💇 : haircut
+
+💈 : barber
+
+💉 : blood
+
+💊 : pill
+
+💋 : kiss
+
+💌 : love
+
+💍 : wedding
+
+💎 : gem
+
+💏 : kiss
+
+💐 : flowers
+
+💑 : lovers
+
+💒 : wedding
+
+💓 : heart
+
+💔 : sadly
+
+💕 : hearts
+
+💖 : sparks heart
+
+💗 : heart
+
+💘 : heart
+
+💙 : heart
+
+💚 : heart
+
+💛 : heart
+
+💜 : heart
+
+💝 : heart
+
+💞 : hearts
+
+💟 : heart
+
+💠 : diamond
+
+💡 : electric
+
+💢 : anger
+
+💣 : bomb
+
+💤 : sleep
+
+💥 : explosion
+
+💦 : drops
+
+💧 : drop
+
+💨 : puff
+
+💩 : shit
+
+💪 : strong
+
+💫 : spinning
+
+💬 : speech
+
+💭 : thought
+
+💮 : flower
+
+💯 : hundred
+
+💰 : money
+
+💱 : currency
+
+💲 : dollar
+
+💳 : credit card
+
+💴 : banknote with yen sign
+
+💵 : banknote with dollar sign
+
+💶 : banknote with euro sign
+
+💷 : banknote with pound sign
+
+💸 : money
+
+💹 : chart with upwards trend and yen sign
+
+💺 : seat
+
+💻 : computer
+
+💼 : briefcase
+
+💽 : minidisc
+
+💾 : floppy disk
+
+💿 : optical disc
+
+📀 : dvd
+
+📁 : file folder
+
+📂 : open file folder
+
+📃 : page with curl
+
+📄 : page facing up
+
+📅 : calendar
+
+📆 : tear-off calendar
+
+📇 : card index
+
+📈 : chart with upwards trend
+
+📉 : chart with downwards trend
+
+📊 : bar chart
+
+📋 : clipboard
+
+📌 : pushpin
+
+📍 : round pushpin
+
+📎 : paperclip
+
+📏 : straight ruler
+
+📐 : triangular ruler
+
+📑 : bookmark tabs
+
+📒 : ledger
+
+📓 : notebook
+
+📔 : notebook with decorative cover
+
+📕 : closed book
+
+📖 : open book
+
+📗 : green book
+
+📘 : blue book
+
+📙 : orange book
+
+📚 : books
+
+📛 : name badge
+
+📜 : scroll
+
+📝 : memo
+
+📞 : telephone receiver
+
+📟 : pager
+
+📠 : fax machine
+
+📡 : satellite antenna
+
+📢 : public address loudspeaker
+
+📣 : cheering megaphone
+
+📤 : outbox tray
+
+📥 : inbox tray
+
+📦 : package
+
+📧 : e-mail symbol
+
+📨 : incoming envelope
+
+📩 : envelope with downwards arrow above
+
+📪 : closed mailbox with lowered flag
+
+📫 : closed mailbox with raised flag
+
+📬 : open mailbox with raised flag
+
+📭 : open mailbox with lowered flag
+
+📮 : postbox
+
+📯 : postal horn
+
+📰 : newspaper
+
+📱 : mobile phone
+
+📲 : mobile phone with rightwards arrow at left
+
+📳 : vibration mode
+
+📴 : mobile phone off
+
+📵 : no mobile phones
+
+📶 : antenna with bars
+
+📷 : camera
+
+📸 : camera with flash
+
+📹 : video camera
+
+📺 : television
+
+📻 : radio
+
+📼 : videocassette
+
+📽 : film projector
+
+📿 : prayer beads
+
+🔀 : twisted rightwards arrows
+
+🔁 : clockwise rightwards and leftwards open circle arrows
+
+🔂 : clockwise rightwards and leftwards open circle arrows with circled one overlay
+
+🔃 : clockwise downwards and upwards open circle arrows
+
+🔄 : anticlockwise downwards and upwards open circle arrows
+
+🔅 : low brightness symbol
+
+🔆 : high brightness symbol
+
+🔇 : speaker with cancellation stroke
+
+🔈 : speaker
+
+🔉 : speaker with one sound wave
+
+🔊 : speaker with three sound waves
+
+🔋 : battery
+
+🔌 : electric plug
+
+🔍 : left-pointing magnifying glass
+
+🔎 : right-pointing magnifying glass
+
+🔏 : lock with ink pen
+
+🔐 : closed lock with key
+
+🔑 : key
+
+🔒 : closed
+
+🔓 : free
+
+🔔 : bell
+
+🔕 : bell with cancellation stroke
+
+🔖 : bookmark
+
+🔗 : link symbol
+
+🔘 : radio button
+
+🔙 : back with leftwards arrow above
+
+🔚 : end with leftwards arrow above
+
+🔛 : on with exclamation mark with left right arrow above
+
+🔜 : soon with rightwards arrow above
+
+🔝 : top with upwards arrow above
+
+🔞 : no one under eighteen symbol
+
+🔟 : keycap ten
+
+🔠 : input symbol for latin capital letters
+
+🔡 : input symbol for latin small letters
+
+🔢 : input symbol for numbers
+
+🔣 : input symbol for symbols
+
+🔤 : input symbol for latin letters
+
+🔥 : fire
+
+🔦 : flashlight
+
+🔧 : wrench
+
+🔨 : hammer
+
+🔩 : nut and bolt
+
+🔪 : knife
+
+🔫 : gun
+
+🔬 : microscope
+
+🔭 : telescope
+
+🔮 : crystal ball
+
+🔯 : six pointed star with middle dot
+
+🔰 : japanese symbol for beginner
+
+🔱 : trident emblem
+
+🔲 : black square button
+
+🔳 : white square button
+
+🔴 : large red circle
+
+🔵 : large blue circle
+
+🔶 : large orange diamond
+
+🔷 : large blue diamond
+
+🔸 : small orange diamond
+
+🔹 : small blue diamond
+
+🔺 : up-pointing red triangle
+
+🔻 : down-pointing red triangle
+
+🔼 : up-pointing small red triangle
+
+🔽 : down-pointing small red triangle
+
+🕉 : om symbol
+
+🕊 : dove of peace
+
+🕋 : kaaba
+
+🕌 : mosque
+
+🕍 : synagogue
+
+🕎 : menorah with nine branches
+
+🕐 : clock face one oclock
+
+🕑 : clock face two oclock
+
+🕒 : clock face three oclock
+
+🕓 : clock face four oclock
+
+🕔 : clock face five oclock
+
+🕕 : clock face six oclock
+
+🕖 : clock face seven oclock
+
+🕗 : clock face eight oclock
+
+🕘 : clock face nine oclock
+
+🕙 : clock face ten oclock
+
+🕚 : clock face eleven oclock
+
+🕛 : clock face twelve oclock
+
+🕜 : clock face one-thirty
+
+🕝 : clock face two-thirty
+
+🕞 : clock face three-thirty
+
+🕟 : clock face four-thirty
+
+🕠 : clock face five-thirty
+
+🕡 : clock face six-thirty
+
+🕢 : clock face seven-thirty
+
+🕣 : clock face eight-thirty
+
+🕤 : clock face nine-thirty
+
+🕥 : clock face ten-thirty
+
+🕦 : clock face eleven-thirty
+
+🕧 : clock face twelve-thirty
+
+🕯 : candle
+
+🕰 : mantelpiece clock
+
+🕳 : hole
+
+🕴 : man in business suit levitating
+
+🕵 : sleuth or spy
+
+🕶 : dark sunglasses
+
+🕷 : spider
+
+🕸 : spider web
+
+🕹 : joystick
+
+🖇 : linked paperclips
+
+🖊 : lower left ballpoint pen
+
+🖋 : lower left fountain pen
+
+🖌 : lower left paintbrush
+
+🖍 : lower left crayon
+
+🖐 : raised hand with fingers splayed
+
+🖕 : reversed hand with middle finger extended
+
+🖖 : raised hand with part between middle and ring fingers
+
+🖥 : desktop computer
+
+🖨 : printer
+
+🖱 : three button mouse
+
+🖲 : trackball
+
+🖼 : frame with picture
+
+🗂 : card index dividers
+
+🗃 : card file box
+
+🗄 : file cabinet
+
+🗑 : wastebasket
+
+🗒 : spiral note pad
+
+🗓 : spiral calendar pad
+
+🗜 : compression
+
+🗝 : old key
+
+🗞 : rolled-up newspaper
+
+🗡 : dagger knife
+
+🗣 : speaking head in silhouette
+
+🗯 : right anger bubble
+
+🗳 : vote
+
+🗺 : world
+
+🗻 : mountain
+
+🗼 : tower
+
+🗽 : liberty
+
+🗾 : japan
+
+🗿 : statue
+
+😀 : grinned
+
+😁 : teeth
+
+😂 : laughing
+
+😃 : smile
+
+😄 : smiley
+
+😅 : laughing
+
+😆 : excited
+
+😇 : good
+
+😈 : smirked
+
+😉 : wink
+
+😊 : smiling
+
+😋 : delicious 
+
+😌 : relief
+
+😍 : love
+
+😎 : cool
+
+😏 : smirked
+
+😐 : neutral
+
+😑 : neutral
+
+😒 : frown
+
+😓 : tear
+
+😔 : sad
+
+😕 : confused
+
+😖 : confused
+
+😗 : kiss
+
+😘 : kiss
+
+😙 : kiss
+
+😚 : kiss
+
+😛 : funny
+
+😜 : funny
+
+😝 : funny
+
+😞 : disappointment
+
+😟 : worried
+
+😠 : angry
+
+😡 : mad
+
+😢 : cry
+
+😣 : sad
+
+😤 : triumph
+
+😥 : disappointed
+
+😦 : frown
+
+😧 : sad
+
+😨 : scared
+
+😩 : tired
+
+😪 : sleepy
+
+😫 : tired
+
+😬 : grim
+
+😭 : tear
+
+😮 : suprise
+
+😯 : suprise
+
+😰 : worry
+
+😱 : fear
+
+😲 : suprised
+
+😳 : embarrassing
+
+😴 : sleep
+
+😵 : spinning
+
+😶 : neutral
+
+😷 : sick
+
+😸 : smile
+
+😹 : laugh
+
+😺 : smile
+
+😻 : love
+
+😼 : smirk
+
+😽 : kissing
+
+😾 : sad
+
+😿 : tear
+
+🙀 : weary
+
+🙁 : frown
+
+🙂 : smile
+
+🙃 : down
+
+🙄 : sarcastic
+
+🙅 : no
+
+🙆 : okay
+
+🙇 : bowing
+
+🙈 : see no
+
+🙉 : hear no
+
+🙊 : speak no
+
+🙋 : happy
+
+🙌 : celebration
+
+🙍 : frown
+
+🙎 : sad
+
+🙏 : prayers
+
+🚀 : rockets
+
+🚁 : flying
+
+🚂 : train
+
+🚃 : train
+
+🚄 : train
+
+🚅 : train
+
+🚆 : train
+
+🚇 : train
+
+🚈 : train
+
+🚉 : train
+
+🚊 : train
+
+🚋 : train
+
+🚌 : bus
+
+🚍 : bus
+
+🚎 : bus
+
+🚏 : bus
+
+🚐 : bus
+
+🚑 : hospital
+
+🚒 : fire
+
+🚓 : police
+
+🚔 : police
+
+🚕 : taxi
+
+🚖 : taxi
+
+🚗 : car
+
+🚘 : car
+
+🚙 : car
+
+🚚 : truck
+
+🚛 : truck
+
+🚜 : tractor
+
+🚝 : train
+
+🚞 : train mountain
+
+🚟 : train
+
+🚠 : train
+
+🚡 : train
+
+🚢 : ship
+
+🚣 : boat
+
+🚤 : boat
+
+🚥 : sign
+
+🚦 : sign
+
+🚧 : construction
+
+🚨 : police
+
+🚩 : flag
+
+🚪 : door
+
+🚫 : no
+
+🚬 : smoking
+
+🚭 : no smoking
+
+🚮 : litter
+
+🚯 : litter
+
+🚰 : water
+
+🚱 : water
+
+🚲 : bike
+
+🚳 : no bike
+
+🚴 : bike
+
+🚵 : mountain bike
+
+🚶 : walking
+
+🚷 : no walking
+
+🚸 : children walking
+
+🚹 : men
+
+🚺 : women
+
+🚻 : restroom
+
+🚼 : baby
+
+🚽 : toilet
+
+🚾 : bathroom
+
+🚿 : shower
+
+🛀 : bath
+
+🛁 : bath
+
+🛂 : passport
+
+🛃 : customs
+
+🛄 : baggage
+
+🛅 : luggage
+
+🛋 : couch
+
+🛌 : sleeping
+
+🛍 : shopping
+
+🛎 : bell
+
+🛏 : bed
+
+🛐 : worship
+
+🛠 : hammer
+
+🛡 : shield
+
+🛢 : oil
+
+🛣 : road
+
+🛤 : track
+
+🛥 : boat
+
+🛩 : plane
+
+🛫 : plane
+
+🛬 : plane
+
+🛰 : space
+
+🛳 : ship
+
+🤐 : zipper
+
+🤑 : money
+
+🤒 : sick
+
+🤓 : smart
+
+🤔 : thoughful
+
+🤕 : hurt
+
+🤖 : robot
+
+🤗 : hugging
+
+🤘 : horn
+
+🦀 : crab
+
+🦁 : lion
+
+🦂 : bug
+
+🦃 : bird
+
+🦄 : unicorn
+
+🧀 : cheese
+
+#⃣ : number
+
+*⃣ : star
+
+0⃣ : zero
+
+1⃣ : one
+
+2⃣ : two
+
+3⃣ : three
+
+4⃣ : four
+
+5⃣ : five
+
+6⃣ : six
+
+7⃣ : seven
+
+8⃣ : eight
+
+9⃣ : nine
+
+lack : believe
+ders : there's
+gf : girlfriend
+shot : trust
+dere : there
+worser : worse
+imma : i will
+to : too
+tf : the fuck did
+ta : supposed to
+krazy : crazy
+smh : shaking my head
+niqqa : nigger
+wipe : wipemy
+did : does
+gettin : getting
+hyl : am
+hym : him
+turnt : turned
+pussy's : pussies
+p : peace
+turnd : turned
+dis : this
+hitta : hitter
+comein : coming
+goofys : dealers
+beretta : baretta
+nem : people are
+fingerz : fingers
+trapping : selling drugs
+sum : some
+gunz : guns
+bds : bodies
+sup : what's up
+twinz : twins
+disney : is disney
+steezybeatz : 
+witchu : you
+never : ever
+ridin : i'm
+smokin : smoking
+laughin : laughing
+fwm : fucking owned
+hbd : happy birthday
+k : ki
+changed : and she became changed
+memba : remember
+boa : boy
+i'm : i
+pillow : pillow keep
+thats : that's
+via : prod
+love : i love
+bro : brother
+wit : with
+everybody : everybody has
+chi : chicago
+cray : crazy
+dnt : doesn't
+thru : through
+tryna : trying
+crazyyyy : crazy
+hurt : jurts
+ain't : aren't
+broski : brother
+baby : baby's
+me : myself
+dey : they
+mf : motherfucker
+niggas : niggers
+this : the
+det : that
+niggaz : niggers
+dyin : dying
+dem : the
+drill : drills
+v : happing
+my : me
+crazy : is crazy
+lock : i controlled
+fuck : fucking
+heard : have heard
+villain : villian
+homie : friend
+choppin : chopping
+want : brother
+sis : sister
+stil : still
+everyday : every day
+1 : one
+how : like
+answer : pussy
+dwn : are down
+ft : jimbo
+fu : fuck you
+datz : that's
+sneak : are
+dats : that's
+dne : just
+fa : for
+fb : facebook
+ova : over
+guyz : guys
+man : men
+a : an
+don't : doesn't
+dueces : goodbye
+its : it's
+ima : i will
+police : the
+till : until
+bf4l : best friend for
+munna : munna's
+bout : about
+goodmorning : good morning
+then : 
+them : those
+yo : your
+ya : bitches you
+dam : damn
+dan : than
+dat : that
+they : they're
+yu : see
+cuzo : cousin
+always : alwasys
+betta : better
+tray : x
+bond : bail
+em : them
+tre : three
+eve : 2020
+kray : crazy
+2day : you
+our : out
+bosstrell : boss trell
+really : 
+gon : are gone
+' : riding and
+trafficing : you
+got : have
+cause : because
+ass : as
+smfh : shaking my fucking
+stull : i still
+opps : opponents are
+g : man
+keep : keeps
+yall : y'all
+think : thinks
+fuckin : fucking
+dont : don't
+number : number number
+comin : coming
+killin : are killing
+cracra : crackers
+nomo : am not
+2 : to
+too : to
+tom : are talking
+fo : for
+hows : how's
+shorty : shortly
+snatch : arrest
+wuda : or would've
+sumthin : something
+gotchu : i've got you
+king : peace
+b : are
+lmao : laughing
+stl : stl's
+gotta : have
+loveu : love you
+fuxk : what a fucked
+r : rest
+2020 : christmas
+wasnt : wasn't
+mind : state
+beatin : beating
+say : ganster says
+dissing : sneakily
+lie : to lie
+lil : little
+t'up : happing turn up
+doin : doing
+knew : know
+paid : was paid
+jst : just
+y : yki
+cracking : going
+why : why'd
+wats : what's
+jus : just
+ki : in
+steady : are steadily
+doe : though
+restup : rest up
+damnn : damn
+convoy : conversation with
+show : shows
+youngin : young
+takin : taking
+aint : 
+crazyy : crazy
+hrs : hours
+folkz : folks
+abt : about
+his : 
+get : gets
+dope : do
+da : the
+beam : laser
+ones : one
+cryin : crying
+mfks : motherfuckers
+stupid : my
+she : she's
+shotz : shots
+y'all : y'all's
+witout : controlled
+inna : in the
+hoez : women
+wire : from
+rite : right
+lul : little
+we : we've
+lightbright : lightbritht
+omw : on my way
+key : 
+shootaz : shooters
+come : coming
+c : will
+mane : man
+lookin : looking
+faces : bitches'
+uno : number one
+wtf : what the fuck
+wen : when
+polo : aren't
+seein : seeing
+frm : from
+bby : baby
+resting : is resting
+youuuuuuuuuu : you
+sooooo : so
+runnin : running
+east : easily
+look : looked
+these : those
+bigboss : boss
+n : and
+while : slaughtered the
+tookah : a tookah
+real : the
+30 : 30 glock
+hoping : i hoping
+is : are
+site : of of
+r.i.p : rest in peace
+r.i.p. : rest in peace
+rip : rest in peace
+cant : can't
+im : i'm
+rih : heaven
+in : became
+smdh : my damn
+id : i'd
+sippin : sipping
+thinkin : thinking
+fingaz : fingers
+shawty : shorty
+downs : down
+yung : young
+10yr : 10 years
+hang : hand out
+ion : don't
+vowel : vow
+military : you'll
+fedz : police
+kno : know
+off : 
+i : peace
+tht : that
+nothin : nothing
+tho : though
+wya : where
+wyo : you
+the : 
+left : 
+juss : just
+yea : yeah
+kilt : killed
+mfs : motherfuckers
+kill : kills
+had : controlled
+cuz : because
+4 : for
+easy : easily
+cloose : close
+cum : come
+letz : let's
+ross : ross is
+bandz : that money
+opp : opponent
+sittin : sitting
+gonna : is going
+wattup : what's up
+killa : killer
+mom : mother's
+dese : these
+lost : i lost
+hittah : hitter
+57 : polo
+remind : reminds
+sissy : sister
+hittas : hitters
+either : eatierh
+soft : am not soft
+tooka : took
+nigga : nigger
+fucking : dealing
+whoppings : whoopings
+idgaf : give
+neva : hadn't ever
+playin : playing
+finna : happing going to
+cnt : can't
+fanna : want
+for : forget
+loosin : losing
+prod : 
+christmas : eve
+be : are
+bc : because
+nails : claw nails
+pose : supposed
+shyt : shit
+by : trust
+stage : mine
+on : 
+om : dissing
+og : original ganster
+of : 
+o : 
+cheif : chief
+idk : i don't know
+wanna : want
+shoota : shooter
+soo : so
+momma : mother's
+been : is
+couldnt : couldn't
+shordy : shorty
+niqqas : niggers
+hea : hear
+way : 
+wat : what
+was : were
+bitches : of bitches'
+realer : more
+boys : boy
+true : true true
+made : mave
+whyy : why
+wasn't : weren't
+up : 
+ur : your
+um : them
+eachother : each other
+delete : kill
+gone : are going
+af : a fuck
+pic : picture
+ina : on the
+shit : this shit
+vout : about tyquanassassin
+no : any
+realest : most real
+naw : no
+sick : sucks
+you : you're
+talkin : talking
+turnup : turning up
+let's : lets
+fell : i fell
+kinda : kinds
+killaz : my killers
+ago : ago if
+nxt : next
+younges : youngest
+happening : happing
+u : you
+serious : are
