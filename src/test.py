@@ -117,7 +117,12 @@ def main(args):
     # TODO: change this file to make it more robust
     args = load_args(args)
     W, token2idx, label2idx, _, _, max_len = pickle.load(open(args['dictionaries_file'], "rb"))
-    indices_file = read_data(args, token2idx, label2idx, args['test_file'], 'text', 'label', 'tweet_id', max_len)
+    print 'is_indexed: ', args['is_indexed']
+    if not args['is_indexed']:
+        indices_file = read_data(args, token2idx, label2idx, args['test_file'], 'text', 'label', 'tweet_id', max_len)
+    else:
+        indices_file = args['test_file']
+
     corpus = Corpus(indices_file, 'clf')
     X_te = add_pad_token(corpus.X, token2idx['__PAD__'], max_len)
     if args['arch_type'] == 'lstm':
@@ -135,7 +140,8 @@ def main(args):
     print classification_report(corpus.y, np.argmax(preds, axis = 1), target_names = get_class_names(label2idx))
     pickle.dump([corpus.y, np.argmax(preds, axis = 1), preds, representations, get_class_names(label2idx)], open(os.path.join(fpath, fname_wo_ext + '_predictions.p'), 'wb'))
     # delete unwanted file
-    delete_files([indices_file])
+    if not args['is_indexed']:
+        delete_files([indices_file])
 
 
 def parse_arguments():
@@ -143,6 +149,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description = '')
     parser.add_argument('-tst', '--test_file', type = str, required = True, help = 'labeled test file')
     parser.add_argument('-wl', '--word_level', type = bool, default = False, help = 'If True, tweets will be processed at word level otherwise at char level')
+    parser.add_argument('-ii', '--is_indexed', type = bool, default = False,
+                        help = 'Indicate whether the file contains the actual text OR the actual text is replaced with word indices. By default, this flag is False')
     parser.add_argument('-tm', '--trained_model', type = str, required = True, default = None, help = 'Path to trained model file')
     args = vars(parser.parse_args())
 

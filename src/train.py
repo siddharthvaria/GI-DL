@@ -117,6 +117,13 @@ def load_corpus(args):
     return corpus
 
 
+def get_output_fname(input_file, suffix):
+    fpath, fname = os.path.split(input_file)
+    dot_index = fname.rindex('.')
+    fname_wo_ext = fname[:dot_index]
+    return os.path.join(fpath, fname_wo_ext + '_' + suffix)
+
+
 def main(args):
 
     corpus = load_corpus(args)
@@ -153,7 +160,8 @@ def main(args):
         # preds are output class probabilities
         preds, representations = clf.fit(X_train, X_val, X_test, y_train, y_val, corpus.class_weights, args)
         print classification_report(np.argmax(y_test, axis = 1), np.argmax(preds, axis = 1), target_names = corpus.get_class_names())
-        pickle.dump([np.argmax(y_test, axis = 1), np.argmax(preds, axis = 1), preds, representations, corpus.get_class_names()], open(os.path.join(args['model_save_dir'], 'best_prediction_' + args['ts'] + '.p'), 'wb'))
+        pickle.dump([np.argmax(y_test, axis = 1), np.argmax(preds, axis = 1), preds, representations, corpus.get_class_names()],
+                    open(get_output_fname(args['val_file'], 'predictions.p'), 'wb'))
     elif args['mode'] == 'clf_cv':
         # perform cross validation
         preds_all = []
