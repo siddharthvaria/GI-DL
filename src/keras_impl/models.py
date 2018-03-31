@@ -11,10 +11,12 @@ from keras.models import Model
 import os, math, numpy as np
 from sklearn.metrics import f1_score, accuracy_score
 
+
 class MyCallback(Callback):
     """
     My custom callback
     """
+
     def __init__(self, val_data, filepath, min_delta = 0, patience = 0, verbose = 0,
                  save_best_only = False, save_weights_only = False):
         super(MyCallback, self).__init__()
@@ -72,6 +74,7 @@ class MyCallback(Callback):
     def on_train_end(self, logs = None):
         if self.stopped_epoch > 0 and self.verbose > 0:
             print('Early stopping . . .')
+
 
 class LSTMLanguageModel(object):
     '''
@@ -148,6 +151,7 @@ class LSTMLanguageModel(object):
                 epochs = 15, verbose = 2, batch_size = args['batch_size'], shuffle = True, \
                 callbacks = [early_stopping, model_checkpoint])
 
+
 class LSTMClassifier(object):
 
     def __init__(self, W, kwargs):
@@ -188,6 +192,9 @@ class LSTMClassifier(object):
 
         self.model = Model(inputs = [sequence_input], outputs = clf_op)
 
+        self._intermediate_layer_model = Model(inputs = self.model.input,
+                                 outputs = self.model.get_layer('dense1').output)
+
     def fit(self, X_train, X_val, X_test, y_train, y_val, class_weights, args):
 
         opt = optimizers.Nadam()
@@ -216,7 +223,9 @@ class LSTMClassifier(object):
     def predict(self, X_test, model_path, batch_size):
         self.model.load_weights(model_path)
         preds = self.model.predict([X_test], batch_size = batch_size, verbose = 2)
-        return preds
+        representations = self._intermediate_layer_model.predict(X_test, batch_size = batch_size, verbose = 2)
+        return preds, representations
+
 
 class CNNClassifier(object):
 
@@ -253,6 +262,9 @@ class CNNClassifier(object):
 
         self.model = Model(inputs = [sequence_input], outputs = clf_op)
 
+        self._intermediate_layer_model = Model(inputs = self.model.input,
+                                 outputs = self.model.get_layer('dense1').output)
+
     def fit(self, X_train, X_val, X_test, y_train, y_val, class_weights, args):
 
         opt = optimizers.Nadam()
@@ -281,7 +293,9 @@ class CNNClassifier(object):
     def predict(self, X_test, model_path, batch_size):
         self.model.load_weights(model_path)
         preds = self.model.predict([X_test], batch_size = batch_size, verbose = 2)
-        return preds
+        representations = self._intermediate_layer_model.predict(X_test, batch_size = batch_size, verbose = 2)
+        return preds, representations
+
 
 class AutoEncoder(object):
 
@@ -349,6 +363,7 @@ class AutoEncoder(object):
                             callbacks = [early_stopping, model_checkpoint],
                             validation_data = corpus.unld_val_data.get_mini_batch(args['batch_size']),
                             validation_steps = int(math.floor(corpus.unld_val_data.wc / args['batch_size'])))
+
 
 class AutoEncoder_CNN(object):
 

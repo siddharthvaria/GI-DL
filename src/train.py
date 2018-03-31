@@ -7,11 +7,12 @@ from sklearn.metrics import classification_report
 
 import cPickle as pickle
 from data_utils.TweetReader2 import TweetCorpus
-from keras_impl.models import LSTMClassifier, LSTMLanguageModel, CNNClassifier, CNNLanguageModel
+from keras_impl.models import LSTMClassifier, LSTMLanguageModel, CNNClassifier
 import matplotlib.pyplot as plt
 import numpy as np
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 
 def sample(preds, temperature = 1.0):
     # helper function to sample an index from a probability array
@@ -21,6 +22,7 @@ def sample(preds, temperature = 1.0):
     preds = exp_preds / np.sum(exp_preds)
     probas = np.random.multinomial(1, preds, 1)
     return np.argmax(probas)
+
 
 def generate_text(model, corpus, args):
 
@@ -47,9 +49,11 @@ def generate_text(model, corpus, args):
 
         print '##############################################'
 
+
 def write_args_json(args):
     with open(os.path.join(args['model_save_dir'], 'args_' + args['ts'] + '.json'), 'w') as fh:
         fh.write(json.dumps(args, indent = 4))
+
 
 def vizualize_embeddings(emb_matrix, token2idx):
 
@@ -85,12 +89,13 @@ def vizualize_embeddings(emb_matrix, token2idx):
     plt.grid()
     plt.show()
 
+
 def load_corpus(args):
 
     if args == None:
         return None
 
-    corpus = TweetCorpus(args['train_file'], args['val_file'], args['test_file'], args['unld_train_file'], args['unld_val_file'], args['dictionaries_file'])
+    corpus = TweetCorpus(args['train_file'], args['val_file'], args['val_file'], args['unld_train_file'], args['unld_val_file'], args['dictionaries_file'])
 
     args['max_seq_len'] = corpus.max_len
     args['nclasses'] = len(corpus.label2idx)
@@ -111,6 +116,7 @@ def load_corpus(args):
 
     return corpus
 
+
 def main(args):
 
     corpus = load_corpus(args)
@@ -123,15 +129,6 @@ def main(args):
             # set the context size for lstm language model
             print 'Creating lstm language model . . .'
             lm = LSTMLanguageModel(corpus.W, args)
-            print 'Training language model . . .'
-            lm.fit(corpus, args)
-        else:
-            # set the context size for cnn language model
-            args['truncate'] = True
-            args['context_size'] = 20
-            args['max_seq_len'] = args['context_size']
-            print 'Creating cnn language model . . .'
-            lm = CNNLanguageModel(corpus.W, args)
             print 'Training language model . . .'
             lm.fit(corpus, args)
     elif args['mode'] == 'clf':
@@ -154,9 +151,9 @@ def main(args):
         print 'Training classifier model . . .'
         X_train, X_val, X_test, y_train, y_val, y_test = corpus.get_data_for_classification()
         # preds are output class probabilities
-        preds = clf.fit(X_train, X_val, X_test, y_train, y_val, corpus.class_weights, args)
+        preds, representations = clf.fit(X_train, X_val, X_test, y_train, y_val, corpus.class_weights, args)
         print classification_report(np.argmax(y_test, axis = 1), np.argmax(preds, axis = 1), target_names = corpus.get_class_names())
-        pickle.dump([np.argmax(y_test, axis = 1), np.argmax(preds, axis = 1), preds, corpus.get_class_names()], open(os.path.join(args['model_save_dir'], 'best_prediction_' + args['ts'] + '.p'), 'wb'))
+        pickle.dump([np.argmax(y_test, axis = 1), np.argmax(preds, axis = 1), preds, representations, corpus.get_class_names()], open(os.path.join(args['model_save_dir'], 'best_prediction_' + args['ts'] + '.p'), 'wb'))
     elif args['mode'] == 'clf_cv':
         # perform cross validation
         preds_all = []
@@ -181,7 +178,7 @@ def main(args):
                     print 'Loading weights from trained CNN model . . .'
                     clf.model.load_weights(args['trained_model'], by_name = True)
             print 'Training classifier model . . .'
-            preds = clf.fit(X_train, X_val, X_val, y_train, y_val, corpus.class_weights, args)
+            preds, _ = clf.fit(X_train, X_val, X_val, y_train, y_val, corpus.class_weights, args)
             preds_all.extend(preds)
             y_all.extend(y_val)
         print classification_report(np.argmax(y_all, axis = 1), np.argmax(preds_all, axis = 1), target_names = corpus.get_class_names())
@@ -194,6 +191,7 @@ def main(args):
         emb_matrix = clf.embedding_layer.get_weights()[0]
         vizualize_embeddings(emb_matrix, corpus.token2idx)
 
+
 def parse_arguments():
 
     parser = argparse.ArgumentParser(description = '')
@@ -201,7 +199,6 @@ def parse_arguments():
     # i.e args['pt'] will give KeyError.
     parser.add_argument('-tr', '--train_file', type = str, default = None, help = 'labeled train file')
     parser.add_argument('-val', '--val_file', type = str, default = None, help = 'labeled validation file')
-    parser.add_argument('-tst', '--test_file', type = str, default = None, help = 'labeled test file')
     parser.add_argument('-dict', '--dictionaries_file', type = str, default = None, help = 'pickled dictionary file (run preprocess_tweets.py to generate the dictionary file)')
     parser.add_argument('-sdir', '--model_save_dir', type = str, default = None, help = 'directory where trained model should be saved')
     parser.add_argument('-md', '--mode', type = str, default = 'clf', help = 'mode (clf,clf_cv,lm)')
@@ -219,6 +216,7 @@ def parse_arguments():
     args = vars(parser.parse_args())
 
     return args
+
 
 if __name__ == '__main__':
 

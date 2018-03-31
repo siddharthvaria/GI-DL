@@ -13,6 +13,7 @@ import numpy as np
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
+
 def load_args(args):
     _ts = re.search(r'\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}', args['trained_model']).group(0)
     fpath, _ = os.path.split(args['trained_model'])
@@ -21,6 +22,7 @@ def load_args(args):
     for k in args.keys():
         _args[k] = args[k]
     return _args
+
 
 def update_token2idx(tweet, token2idx, word_level = False):
 
@@ -64,6 +66,7 @@ def update_token2idx(tweet, token2idx, word_level = False):
                 index += 1
     return idx
 
+
 def read_data(args, token2idx, label2idx, data_file, text_column, label_column, tweet_id_column, max_len, encoding = 'utf8'):
 
     if data_file is None:
@@ -98,6 +101,7 @@ def read_data(args, token2idx, label2idx, data_file, text_column, label_column, 
 
     return indices_file
 
+
 def get_class_names(label2idx):
 
     class_names = []
@@ -106,6 +110,7 @@ def get_class_names(label2idx):
         class_names.append(idx2label[idx])
 
     return class_names
+
 
 def main(args):
 
@@ -126,11 +131,12 @@ def main(args):
     dot_index = fname.rindex('.')
     fname_wo_ext = fname[:dot_index]
 
-    preds = clf.predict(X_te, args['trained_model'], args['batch_size'])
+    preds, representations = clf.predict(X_te, args['trained_model'], args['batch_size'])
     print classification_report(corpus.y, np.argmax(preds, axis = 1), target_names = get_class_names(label2idx))
-    pickle.dump([corpus.y, np.argmax(preds, axis = 1), preds, get_class_names(label2idx)], open(os.path.join(fpath, fname_wo_ext + '_predictions.p'), 'wb'))
+    pickle.dump([corpus.y, np.argmax(preds, axis = 1), preds, representations, get_class_names(label2idx)], open(os.path.join(fpath, fname_wo_ext + '_predictions.p'), 'wb'))
     # delete unwanted file
     delete_files([indices_file])
+
 
 def parse_arguments():
 
@@ -141,6 +147,7 @@ def parse_arguments():
     args = vars(parser.parse_args())
 
     return args
+
 
 if __name__ == '__main__':
     main(parse_arguments())
