@@ -47,27 +47,49 @@ def get_stratified_samples(data, schema):
 
 def read_data(input_file, schema):
     data = defaultdict(list)
-    tweet_ids = set()
+    tweet_ids = defaultdict(list)
     label2count = defaultdict(int)
+
     with open(input_file, 'r') as fhr:
         reader = unicode_csv_reader2(fhr, 'utf8', delimiter = ',')
         for row in reader:
             tweet_id = row['tweet_id']
             label = row['label']
-            if tweet_id in tweet_ids:
-                print 'Found duplicate tweet: ', tweet_id
-                continue
-            else:
-                tweet_ids.add(tweet_id)
 
             if label not in ['Loss', 'Aggression', 'Other']:
                 print 'Found invalid label: ', label
                 continue
 
             label2count[row['label']] += 1
+            tweet_ids[tweet_id].append(label)
 
-            for column in schema:
-                data[column].append(row[column])
+    duplicate_tweets = set()
+    with open(input_file, 'r') as fhr:
+        reader = unicode_csv_reader2(fhr, 'utf8', delimiter = ',')
+        for row in reader:
+            tweet_id = row['tweet_id']
+            label = row['label']
+
+            if label not in ['Loss', 'Aggression', 'Other']:
+                print 'Found invalid label: ', label
+                continue
+
+            if tweet_id not in tweet_ids:
+                raise Exception('How did this happen!')
+            else:
+                _labels = set(tweet_ids[tweet_id])
+                if len(_labels) > 1:
+                    print 'Disagreement found, Tweet id: %s' % (tweet_id)
+                    continue
+
+                if tweet_id in duplicate_tweets:
+                    print 'Found duplicate tweet: ', tweet_id
+                    continue
+                else:
+                    duplicate_tweets.add(tweet_id)
+
+                for column in schema:
+                    data[column].append(row[column])
 
     print 'Len(data): ', len(data['tweet_id'])
     print 'Label distribution: ', label2count
