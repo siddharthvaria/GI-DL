@@ -3,10 +3,12 @@ import datetime
 import os
 import shutil
 from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.feature_selection.mutual_info_ import mutual_info_classif
 import time
 import torch
 
 from Nadam import NadamOptimizer
+from scipy.sparse import csc_matrix
 from cnn_lm_nce import CNN_Model
 from data_utils.TweetReader2 import TweetCorpus
 import numpy as np
@@ -22,6 +24,7 @@ def get_stopwords(stop_words_file):
 
     return stop_words
 
+
 def drop_tweets_by_length(inputs, targets, min_len = 5):
 
     # drop tweets less than min_len long
@@ -36,37 +39,73 @@ def drop_tweets_by_length(inputs, targets, min_len = 5):
     targets_n = np.asarray(targets_n)
     return inputs_n, targets_n
 
+
+def convert_X_to_ijv_format(inputs):
+    # duplicates are fine as they are handled by 'CSC' format.
+    data = []
+    rows = []
+    columns = []
+    for ii in xrange(inputs.shape[0]):
+        for idx in inputs[ii]:
+            data.append(1.0)
+            rows.append(ii)
+            columns.append(idx)
+
+    return data, rows, columns
+
+
+'''
+def convert_y_to_ijv_format(y):
+
+    data = []
+    rows = []
+    columns = []
+    for ii in xrange(y.shape[0]):
+        data.append(y[ii])
+        rows.append(ii)
+        columns.append(0)
+
+    return data, rows, columns
+'''
+
+
 def get_correlations(inputs, targets, idx2token, stop_words = None, mask_value = None):
 
     print 'Before dropping, len(inputs): ', len(inputs)
     inputs, targets = drop_tweets_by_length(inputs, targets)
     print 'After dropping, len(inputs): ', len(inputs)
 
-    counts = np.zeros((len(idx2token), inputs.shape[0]))
-    for ii in range(inputs.shape[0]):
-        for jj in range(len(inputs[ii])):
-            if mask_value is not None and inputs[ii][jj] == mask_value:
-                continue
-            counts[inputs[ii][jj]][ii] += 1
+    # convert X to CSC format
+    data, row, col = convert_X_to_ijv_format(inputs)
+    counts = csc_matrix((data, (row, col)), shape = (inputs.shape[0], len(idx2token)))
 
     tf_idf_transformer = TfidfTransformer(norm = 'l2', use_idf = True, smooth_idf = True, sublinear_tf = True)
-    counts = np.transpose(tf_idf_transformer.fit_transform(np.transpose(counts)).toarray())
-    print('counts.shape: ', counts.shape)
+    tf_idf_transformer.fit(counts)
+    counts = tf_idf_transformer.transform(counts)
 
     zero_cnt_words = 0
     mx_corrcoef = 0.0
     mn_corrcoef = 0.0
 
     corrcoef = np.zeros(len(idx2token))
+
+    print 'Computing correlations for %d words . . .' % (len(idx2token))
     for ii in range(len(idx2token)):
+
+        if ii % (len(idx2token) / 4) == 0:
+            print '%d/%d' % (ii, len(idx2token))
+
         if mask_value is not None and ii == mask_value:
             continue
         if stop_words is not None and idx2token[ii] in stop_words:
             continue
-        if np.sum(counts[ii]) == 0.0:
+
+        _col = counts.getcol(ii)
+        if _col.sum() == 0.0:
             zero_cnt_words += 1
             continue
-        corrcoef[ii] = np.corrcoef(counts[ii], targets)[0, 1]
+
+        corrcoef[ii] = np.corrcoef(np.squeeze(_col.todense()), targets)[0, 1]
         mx_corrcoef = max(mx_corrcoef, corrcoef[ii])
         mn_corrcoef = min(mn_corrcoef, corrcoef[ii])
 
@@ -78,6 +117,30 @@ def get_correlations(inputs, targets, idx2token, stop_words = None, mask_value =
     # normalize correlations to convert into distribution
     corrcoef = corrcoef / np.sum(corrcoef)
     return corrcoef
+
+
+def get_mutual_information(inputs, targets, token2idx, stop_words = None, mask_token = None):
+
+    # convert X to CSC format
+    data, row, col = convert_X_to_ijv_format(inputs)
+    counts = csc_matrix((data, (row, col)), shape = (inputs.shape[0], len(token2idx)))
+
+#     tf_idf_transformer = TfidfTransformer(norm = 'l2', use_idf = True, smooth_idf = True, sublinear_tf = True)
+#     tf_idf_transformer.fit(counts)
+#     counts = tf_idf_transformer.transform(counts)
+
+    mi = mutual_info_classif(counts, targets)
+
+    mi[token2idx[mask_token]] = 0.0
+    for stop_word in stop_words:
+        if stop_word in token2idx:
+            mi[token2idx[stop_word]] = 0.0
+
+    print('Maximum mutual information:', np.max(mi))
+    print('Minimum mutual information:', np.min(mi))
+    mi += 1e-9
+    return mi
+
 
 def get_frequencies(counts, token2idx, stop_words = None, mask_value = None):
     assert len(counts) == len(token2idx), 'len(counts) != len(token2idx)'
@@ -94,6 +157,7 @@ def get_frequencies(counts, token2idx, stop_words = None, mask_value = None):
     # normalize freqs
     freqs = freqs / np.sum(freqs)
     return freqs
+
 
 def get_samples(data, correlations, frequencies, num_pos = 2, num_neg = 10):
     dsz = data.shape[0]
@@ -112,6 +176,7 @@ def get_samples(data, correlations, frequencies, num_pos = 2, num_neg = 10):
 # def prepare_batch(data, correlations, frequencies, num_pos = 2, num_neg = 10, batch_size = 256):
 #     # data, correlations, frequencies, num_pos, num_neg, batch_size
 #     samples_pos, samples_neg = get_samples(data, correlations, frequencies, num_pos = num_pos, num_neg = num_neg, batch_size = batch_size)
+
 
 def get_data(corpus, min_len = 5):
 
@@ -144,6 +209,7 @@ def get_data(corpus, min_len = 5):
     print 'X_val.shape:', X_val.shape
     return X_tr, X_tr_l, X_val, X_val_l
 
+
 def batch_iter(X, X_l, correlations, frequencies, num_pos = 2, num_neg = 10, batch_size = 256, shuffle = False):
     """
     Generates a batch iterator for a dataset.
@@ -170,6 +236,14 @@ def batch_iter(X, X_l, correlations, frequencies, num_pos = 2, num_neg = 10, bat
 #         print 'noise_probs.shape:', noise_probs.shape
         yield (shuffled_X[start_index:end_index], X_l[start_index:end_index], samples, targets, noise_probs)
 
+
+def binarize_labels(labels, pos_classes, label2idx):
+    print 'Positive classes: ', pos_classes
+    pos_classes = [label2idx[_class] for _class in pos_classes]
+    labels = [1 if _label in pos_classes else 0 for _label in labels]
+    return np.asarray(labels)
+
+
 def train_lm(sess, model, args, corpus):
 
     # Define Training procedure
@@ -179,34 +253,11 @@ def train_lm(sess, model, args, corpus):
     grads_and_vars = optimizer.compute_gradients(model.lm_loss)
     train_op = optimizer.apply_gradients(grads_and_vars, global_step = global_step)
 
-    # Keep track of gradient values and sparsity (optional)
-    grad_summaries = []
-    for g, v in grads_and_vars:
-        if g is not None:
-            grad_hist_summary = tf.summary.histogram("{}/grad/hist".format(v.name), g)
-            sparsity_summary = tf.summary.scalar("{}/grad/sparsity".format(v.name), tf.nn.zero_fraction(g))
-            grad_summaries.append(grad_hist_summary)
-            grad_summaries.append(sparsity_summary)
-    grad_summaries_merged = tf.summary.merge(grad_summaries)
-
     # Output directory for models and summaries
     if os.path.isdir(os.path.join(args['model_save_dir'], "lm_runs")):
         shutil.rmtree(os.path.join(args['model_save_dir'], "lm_runs"))
     out_dir = os.path.abspath(os.path.join(args['model_save_dir'], "lm_runs"))
     print("Writing to {}\n".format(out_dir))
-
-    # Summaries for loss and accuracy
-    loss_summary = tf.summary.scalar("loss", model.lm_loss)
-
-    # Train Summaries
-    train_summary_op = tf.summary.merge([loss_summary, grad_summaries_merged])
-    train_summary_dir = os.path.join(out_dir, "summaries", "train")
-    train_summary_writer = tf.summary.FileWriter(train_summary_dir, sess.graph)
-
-    # Dev summaries
-#             dev_summary_op = tf.summary.merge([loss_summary])
-#             dev_summary_dir = os.path.join(out_dir, "summaries", "dev")
-#             dev_summary_writer = tf.summary.FileWriter(dev_summary_dir, sess.graph)
 
     # Checkpoint directory. Tensorflow assumes this directory already exists so we need to create it
     checkpoint_dir = os.path.abspath(os.path.join(out_dir, "checkpoints"))
@@ -231,10 +282,9 @@ def train_lm(sess, model, args, corpus):
           model.input_y_lm: targets,
           model.dropout_keep_prob: args['dropout']
         }
-        _, step, summaries, loss = sess.run(
-            [train_op, global_step, train_summary_op, model.lm_loss],
+        _, step, loss = sess.run(
+            [train_op, global_step, model.lm_loss],
             feed_dict)
-        train_summary_writer.add_summary(summaries, step)
 
         return loss
 
@@ -260,8 +310,8 @@ def train_lm(sess, model, args, corpus):
 
     stop_words = get_stopwords(args['stop_words_file'])
 
-    targets = np.squeeze(corpus.tr_data.y)
-    np.place(targets, targets == 2, [1])
+    targets = binarize_labels(corpus.tr_data.y, args['pos_classes'], corpus.label2idx)
+
     correlations = get_correlations(corpus.tr_data.X, targets, corpus.idx2token, stop_words, mask_value = corpus.pad_token_idx)
     freqs = get_frequencies(corpus.counts, corpus.token2idx, stop_words, mask_value = corpus.pad_token_idx)
     # Generate batches
@@ -305,6 +355,7 @@ def train_lm(sess, model, args, corpus):
             print 'Early stopping . . .'
             break
 
+
 def main(args):
 
     # train_file = None, val_file = None, test_file = None, unld_train_file = None, unld_val_file = None, dictionaries_file = None
@@ -330,14 +381,15 @@ def main(args):
                                num_filters = args['nfeature_maps'],
                                embeddings = corpus.W,
                                class_weights = class_weights,
-                               num_pos = 2,
-                               num_neg = 10)
+                               num_pos = args['num_pos'],
+                               num_neg = args['num_neg'])
 
             print 'List of trainable variables:'
             for i in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES):
                 print i.name
 
             train_lm(sess, cnn, args, corpus)
+
 
 def parse_arguments():
 
@@ -355,10 +407,14 @@ def parse_arguments():
     parser.add_argument('-nfmaps', '--nfeature_maps', type = int, default = 200)
     parser.add_argument('-do', '--dropout', type = float, default = 0.5)
     parser.add_argument('-bsz', '--batch_size', type = int, default = 256)
+    parser.add_argument('-np', '--num_pos', type = int, default = 2, help = 'Number of positive tokens to sample per input')
+    parser.add_argument('-nn', '--num_neg', type = int, default = 10, help = 'Number of negative tokens to sample per a positive token')
+    parser.add_argument('-pc', '--pos-classes', nargs = '+', default = [])
 
     args = vars(parser.parse_args())
 
     return args
+
 
 if __name__ == '__main__':
 

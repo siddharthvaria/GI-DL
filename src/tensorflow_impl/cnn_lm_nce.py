@@ -1,10 +1,12 @@
 import tensorflow as tf
 
+
 class CNN_Model(object):
     """
     A CNN for text classification.
     Uses an embedding layer, followed by a convolutional, max-pooling and softmax layer.
     """
+
     def __init__(
             self,
             sequence_length,
@@ -24,7 +26,7 @@ class CNN_Model(object):
         self.input_noise_probs = tf.placeholder(tf.float32, [None, num_pos, num_neg + 1], name = "input_noise_probs")
         # self.input_lengths = tf.placeholder(tf.int32, [None, 1], name = "input_lengths")
         self.input_y_lm = tf.placeholder(tf.float32, [None, num_pos, num_neg + 1], name = "input_y_lm")
-        self.input_y_clf = tf.placeholder(tf.float32, [None, num_classes], name = "input_y_clf")
+        self.input_y_clf = tf.placeholder(tf.int32, [None], name = "input_y_clf")
         self.dropout_keep_prob = tf.placeholder(tf.float32, name = "dropout_keep_prob")
 
         with tf.variable_scope("embedding"):
@@ -104,8 +106,7 @@ class CNN_Model(object):
             self.scores = tf.nn.xw_plus_b(self.h_out, W, b, name = "scores")
             self.probabilities = tf.nn.softmax(self.scores, 1, name = "probabilities")
 
-            # use tf.losses.sparse_softmax_cross_entropy
-            weights = tf.reduce_sum(tf.constant(class_weights) * self.input_y_clf, axis = 1)
-            cce_loss = tf.nn.softmax_cross_entropy_with_logits(logits = self.scores, labels = self.input_y_clf)
+            weights = tf.squeeze(tf.gather_nd(tf.expand_dims(tf.constant(class_weights), axis = 1), tf.expand_dims(self.input_y_clf, 1)))
+            cce_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits = self.scores, labels = self.input_y_clf)
             weighted_cce_loss = cce_loss * weights
             self.clf_loss = tf.reduce_sum(weighted_cce_loss)

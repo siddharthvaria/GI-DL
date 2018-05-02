@@ -159,7 +159,7 @@ def main(args):
         X_train, X_val, X_test, y_train, y_val, y_test = corpus.get_data_for_classification()
         # preds are output class probabilities
         preds, representations = clf.fit(X_train, X_val, X_test, y_train, y_val, corpus.class_weights, args)
-        print classification_report(np.argmax(y_test, axis = 1), np.argmax(preds, axis = 1), target_names = corpus.get_class_names())
+        print classification_report(np.argmax(y_test, axis = 1), np.argmax(preds, axis = 1), target_names = corpus.get_class_names(), digits = 4)
         pickle.dump([np.argmax(y_test, axis = 1), np.argmax(preds, axis = 1), preds, representations, corpus.get_class_names()],
                     open(get_output_fname(args['val_file'], 'predictions.p'), 'wb'))
     elif args['mode'] == 'clf_cv':
@@ -189,7 +189,7 @@ def main(args):
             preds, _ = clf.fit(X_train, X_val, X_val, y_train, y_val, corpus.class_weights, args)
             preds_all.extend(preds)
             y_all.extend(y_val)
-        print classification_report(np.argmax(y_all, axis = 1), np.argmax(preds_all, axis = 1), target_names = corpus.get_class_names())
+        print classification_report(np.argmax(y_all, axis = 1), np.argmax(preds_all, axis = 1), target_names = corpus.get_class_names(), digits = 4)
         pickle.dump([np.argmax(y_all, axis = 1), np.argmax(preds_all, axis = 1), preds_all, corpus.get_class_names()], open(os.path.join(args['model_save_dir'], 'best_prediction_' + args['ts'] + '.p'), 'wb'))
     elif args['mode'] == 'analyze':
         print 'Analyzing embeddings . . .'

@@ -137,7 +137,7 @@ def main(args):
     fname_wo_ext = fname[:dot_index]
 
     preds, representations = clf.predict(X_te, args['trained_model'], args['batch_size'])
-    print classification_report(corpus.y, np.argmax(preds, axis = 1), target_names = get_class_names(label2idx))
+    print classification_report(corpus.y, np.argmax(preds, axis = 1), target_names = get_class_names(label2idx), digits = 4)
     pickle.dump([corpus.y, np.argmax(preds, axis = 1), preds, representations, get_class_names(label2idx)], open(os.path.join(fpath, fname_wo_ext + '_predictions.p'), 'wb'))
     # delete unwanted file
     if not args['is_indexed']:

@@ -1,9 +1,11 @@
 from keras.utils import np_utils
 from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedShuffleSplit
 import subprocess
 
 import cPickle as pickle
 import numpy as np
+
 
 def flatten(X, context_size):
     if X == None:
@@ -35,9 +37,11 @@ def flatten(X, context_size):
     y_tcs = np.expand_dims(y_tcs, 1)
     return X_tcs, y_tcs
 
+
 def add_pad_token(X, pad_token_idx, max_len):
     _X = [np.asarray([pad_token_idx for _ in xrange(max_len - len(indices))] + indices) for indices in X]
     return np.asarray(_X)
+
 
 def parse_line(line, mode):
     x_y = line.split('<:>')
@@ -46,10 +50,11 @@ def parse_line(line, mode):
     if mode == 'lm':
         y_c = None
     elif mode == 'clf':
-        y_c = [int(x_y[1])]
+        y_c = int(x_y[1])
     elif mode == 'seq2seq':
         y_c = indices
     return X_c, y_c
+
 
 def get_line_count(fname):
     p = subprocess.Popen(['wc', '-l', fname], stdout = subprocess.PIPE,
@@ -59,7 +64,9 @@ def get_line_count(fname):
         raise IOError(err)
     return int(result.strip().split()[0])
 
+
 class Corpus:
+
     # in-memory data
     def __init__(self, data_file, mode):
         self.X = []
@@ -78,7 +85,9 @@ class Corpus:
         self.X = np.asarray(self.X)
         self.y = np.asarray(self.y)
 
+
 class Generator:
+
     # streaming data
     def __init__(self, data_file, mode, max_len, nclasses, pad_token_idx):
         self.data_file = data_file
@@ -118,6 +127,7 @@ class Generator:
                 for line in fh:
                     X_c, y_c = parse_line(line, self.mode, self.max_len, self.nclasses, self.pad_token_idx)
                     yield (np.asarray([X_c]), np.asarray([y_c]))
+
 
 class TweetCorpus:
 
@@ -159,30 +169,44 @@ class TweetCorpus:
         y_tr = None
         if self.tr_data is not None:
             X_tr = add_pad_token(self.tr_data.X, self.pad_token_idx, self.max_len)
-            y_tr = np_utils.to_categorical(self.tr_data.y, len(self.label2idx))
+            y_tr = self.tr_data.y
 
         X_val = None
         y_val = None
         if self.val_data is not None:
             X_val = add_pad_token(self.val_data.X, self.pad_token_idx, self.max_len)
-            y_val = np_utils.to_categorical(self.val_data.y, len(self.label2idx))
+            y_val = self.val_data.y
 
         X_te = None
         y_te = None
         if self.te_data is not None:
             X_te = add_pad_token(self.te_data.X, self.pad_token_idx, self.max_len)
-            y_te = np_utils.to_categorical(self.te_data.y, len(self.label2idx))
+            y_te = self.te_data.y
 
         return X_tr, X_val, X_te, y_tr, y_val, y_te
 
-    def get_data_for_cross_validation(self, folds = 3):
-        X_tr, X_val, _, y_tr, y_val, _ = self.get_data_for_classification()
+    def get_data_for_cross_validation(self, folds = 5):
+        _X_tr, _X_val, _, _y_tr, _y_val, _ = self.get_data_for_classification()
         # combine X_train, X_val and use the combined dataset for cross validation
-        X_train = np.concatenate((X_tr, X_val), axis = 0)
-        y_train = np.concatenate((y_tr, y_val), axis = 0)
-        skf = StratifiedKFold(n_splits = folds)
-        for train_index, test_index in skf.split(X_train, np.argmax(y_train, axis = 1)):
-            yield X_train[train_index], X_train[test_index], y_train[train_index], y_train[test_index]
+        X = np.concatenate((_X_tr, _X_val), axis = 0)
+        y = np.concatenate((_y_tr, _y_val), axis = 0)
+        skf = StratifiedKFold(n_splits = folds, random_state = 3463)
+        for train_val_index, test_index in skf.split(X, np.argmax(y, axis = 1)):
+            X_tr_val = X[train_val_index]
+            y_tr_val = y[train_val_index]
+            X_te = X[test_index]
+            y_te = y[test_index]
+            sss = StratifiedShuffleSplit(n_splits = 1, test_size = 0.15, random_state = 3463)
+            X_tr = None
+            y_tr = None
+            X_val = None
+            y_val = None
+            for train_index, val_index in sss.split(X_tr_val, y_tr_val):
+                X_tr = X_tr_val[train_index]
+                y_tr = y_tr_val[train_index]
+                X_val = X_tr_val[val_index]
+                y_val = y_tr_val[val_index]
+            yield X_tr, y_tr, X_val, y_val, X_te, y_te
 
     def get_data_for_lm(self, truncate = False, context_size = 10):
         if truncate:
