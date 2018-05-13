@@ -79,12 +79,12 @@ class CNN_Model(object):
 
         # Calculate nce_loss for the language model
         with tf.variable_scope("lm_loss"):
-            W_nce = tf.get_variable(
-                "W_nce",
-                shape = [vocab_size, embedding_size],
-                initializer = tf.random_uniform_initializer(minval = -0.25, maxval = 0.25))
+#             W_nce = tf.get_variable(
+#                 "W_nce",
+#                 shape = [vocab_size, embedding_size],
+#                 initializer = tf.random_uniform_initializer(minval = -0.25, maxval = 0.25))
 
-            embedded_samples = tf.reshape(tf.nn.embedding_lookup(W_nce, self.input_samples), [-1, num_pos * (num_neg + 1), embedding_size])
+            embedded_samples = tf.reshape(tf.nn.embedding_lookup(self.W, self.input_samples), [-1, num_pos * (num_neg + 1), embedding_size])
             # At this point, embedded_samples has size  : batch_size, num_pos * (num_neg + 1), embedding_size
             score_p = tf.matmul(embedded_samples, tf.expand_dims(self.h_out, -1), name = 'score_p')
             score_p = tf.reshape(score_p, [-1, num_pos, num_neg + 1])

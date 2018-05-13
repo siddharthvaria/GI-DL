@@ -9,6 +9,7 @@ from keras.layers import MaxPooling1D, GlobalMaxPooling1D, concatenate
 from keras.layers.wrappers import TimeDistributed
 from keras.models import Model
 import os, math, numpy as np
+from keras.utils import np_utils
 from sklearn.metrics import f1_score, accuracy_score
 
 
@@ -77,6 +78,7 @@ class MyCallback(Callback):
 
 
 class LSTMLanguageModel(object):
+
     '''
     Wrapper class around Keras Model API
     '''
@@ -268,6 +270,11 @@ class CNNClassifier(object):
     def fit(self, X_train, X_val, X_test, y_train, y_val, class_weights, args):
 
         opt = optimizers.Nadam()
+
+        y_train = np.expand_dims(y_train, axis = 1)
+        y_train = np_utils.to_categorical(y_train, len(class_weights))
+        y_val = np.expand_dims(y_val, axis = 1)
+        y_val = np_utils.to_categorical(y_val, len(class_weights))
 
         self.model.compile(loss = 'categorical_crossentropy',
                 optimizer = opt,

@@ -138,6 +138,7 @@ def main(args):
             lm = LSTMLanguageModel(corpus.W, args)
             print 'Training language model . . .'
             lm.fit(corpus, args)
+            pickle.dump([lm.embedding_layer.get_weights()], open(get_output_fname(args['val_file'], 'embeddings.p'), 'wb'))
     elif args['mode'] == 'clf':
         if args['arch_type'] == 'lstm':
             print 'Creating LSTM classifier model . . .'
@@ -159,8 +160,8 @@ def main(args):
         X_train, X_val, X_test, y_train, y_val, y_test = corpus.get_data_for_classification()
         # preds are output class probabilities
         preds, representations = clf.fit(X_train, X_val, X_test, y_train, y_val, corpus.class_weights, args)
-        print classification_report(np.argmax(y_test, axis = 1), np.argmax(preds, axis = 1), target_names = corpus.get_class_names(), digits = 4)
-        pickle.dump([np.argmax(y_test, axis = 1), np.argmax(preds, axis = 1), preds, representations, corpus.get_class_names()],
+        print classification_report(y_test, np.argmax(preds, axis = 1), target_names = corpus.get_class_names(), digits = 4)
+        pickle.dump([y_test, np.argmax(preds, axis = 1), preds, representations, corpus.get_class_names()],
                     open(get_output_fname(args['val_file'], 'predictions.p'), 'wb'))
     elif args['mode'] == 'clf_cv':
         # perform cross validation

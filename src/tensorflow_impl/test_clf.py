@@ -8,6 +8,7 @@ import tensorflow as tf
 from train_clf import batch_iter
 from train_clf import dev_step
 
+
 def test_clf(sess, model, args, corpus):
     _, _, X_test, _, _, y_test = corpus.get_data_for_classification()
 
@@ -27,7 +28,8 @@ def test_clf(sess, model, args, corpus):
             _, probabilities = dev_step(sess, model, x_batch, y_batch)
             test_probabilities.extend(probabilities)
 
-    print classification_report(np.argmax(y_test, axis = 1), np.argmax(test_probabilities, axis = 1), target_names = corpus.get_class_names())
+    print classification_report(y_test, np.argmax(test_probabilities, axis = 1), target_names = corpus.get_class_names())
+
 
 def main(args):
 
@@ -58,6 +60,7 @@ def main(args):
             # sess, model, args, corpus
             test_clf(sess, cnn, args, corpus)
 
+
 def parse_arguments():
 
     parser = argparse.ArgumentParser(description = '')
@@ -70,6 +73,7 @@ def parse_arguments():
     args = vars(parser.parse_args())
 
     return args
+
 
 if __name__ == '__main__':
 

@@ -72,8 +72,8 @@ def convert_y_to_ijv_format(y):
 def get_correlations(inputs, targets, idx2token, stop_words = None, mask_value = None):
 
     print 'Before dropping, len(inputs): ', len(inputs)
-    inputs, targets = drop_tweets_by_length(inputs, targets)
-    print 'After dropping, len(inputs): ', len(inputs)
+#     inputs, targets = drop_tweets_by_length(inputs, targets)
+#     print 'After dropping, len(inputs): ', len(inputs)
 
     # convert X to CSC format
     data, row, col = convert_X_to_ijv_format(inputs)
@@ -403,7 +403,7 @@ def parse_arguments():
     parser.add_argument('-w', '--pretrained_weights', type = str, default = None, help = 'Path to pretrained weights file')
     parser.add_argument('-unld_tr', '--unld_train_file', type = str, default = None)
     parser.add_argument('-unld_val', '--unld_val_file', type = str, default = None)
-    parser.add_argument('-epochs', '--n_epochs', type = int, default = 30)
+    parser.add_argument('-epochs', '--n_epochs', type = int, default = 12)
     parser.add_argument('-nfmaps', '--nfeature_maps', type = int, default = 200)
     parser.add_argument('-do', '--dropout', type = float, default = 0.5)
     parser.add_argument('-bsz', '--batch_size', type = int, default = 256)

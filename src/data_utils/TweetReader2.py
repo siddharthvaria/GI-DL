@@ -1,4 +1,3 @@
-from keras.utils import np_utils
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import StratifiedShuffleSplit
 import subprocess

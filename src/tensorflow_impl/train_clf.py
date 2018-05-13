@@ -13,6 +13,7 @@ from data_utils.TweetReader2 import TweetCorpus
 import numpy as np
 import tensorflow as tf
 
+
 def batch_iter(data, batch_size, shuffle = False):
     """
     Generates a batch iterator for a dataset.
@@ -31,6 +32,7 @@ def batch_iter(data, batch_size, shuffle = False):
         end_index = min((batch_num + 1) * batch_size, data_size)
         yield shuffled_data[start_index:end_index]
 
+
 def dev_step(sess, model, x_batch, y_batch):
 
     """
@@ -46,6 +48,7 @@ def dev_step(sess, model, x_batch, y_batch):
         [model.clf_loss, model.probabilities],
         feed_dict)
     return loss, probabilities
+
 
 def train_clf(sess, model, args, corpus):
 
@@ -118,6 +121,7 @@ def train_clf(sess, model, args, corpus):
     X_tr, X_val, X_test, y_tr, y_val, y_test = corpus.get_data_for_classification()
 
     best_val_f = 0
+    # best_val_loss = 1e9
     best_val_probabilities = None
     patience = 5
 
@@ -150,12 +154,14 @@ def train_clf(sess, model, args, corpus):
             val_probabilities.extend(probabilities)
 
         val_loss = _val_loss / len(X_val)
-        val_f = f1_score(np.argmax(y_val, axis = 1), np.argmax(val_probabilities, axis = 1), average = 'macro')
+        val_f = f1_score(y_val, np.argmax(val_probabilities, axis = 1), average = 'macro')
 
         print 'Val Loss: %f, Val macro f: %f' % (val_loss, val_f)
 
         if val_f > best_val_f:
+        # if val_loss < best_val_loss:
             best_val_f = val_f
+            # best_val_loss = val_loss
             best_val_probabilities = val_probabilities
             path = saver.save(sess, checkpoint_prefix, global_step = current_step)
             print("Saved model checkpoint to {}\n".format(path))
@@ -168,11 +174,12 @@ def train_clf(sess, model, args, corpus):
             print 'Early stopping . . .'
             break
 
-    print classification_report(np.argmax(y_val, axis = 1), np.argmax(best_val_probabilities, axis = 1), target_names = corpus.get_class_names())
+    print classification_report(y_val, np.argmax(best_val_probabilities, axis = 1), target_names = corpus.get_class_names())
+
 
 def main(args):
 
-    corpus = TweetCorpus(train_file = args['train_file'], val_file = args['val_file'], test_file = args['test_file'] , dictionaries_file = args['dictionaries_file'])
+    corpus = TweetCorpus(train_file = args['train_file'], val_file = args['val_file'], test_file = None , dictionaries_file = args['dictionaries_file'])
 
     ts = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     args['ts'] = ts
@@ -203,6 +210,7 @@ def main(args):
             # sess, model, args, corpus
             train_clf(sess, cnn, args, corpus)
 
+
 def parse_arguments():
 
     parser = argparse.ArgumentParser(description = '')
@@ -210,7 +218,6 @@ def parse_arguments():
     # i.e args['pt'] will give KeyError.
     parser.add_argument('-tr', '--train_file', type = str, help = 'labeled train file')
     parser.add_argument('-val', '--val_file', type = str, help = 'labeled validation file')
-    parser.add_argument('-tst', '--test_file', type = str, help = 'labeled test file')
     parser.add_argument('-dict', '--dictionaries_file', type = str, help = 'pickled dictionary file')
     parser.add_argument('-sdir', '--model_save_dir', type = str, help = 'directory where trained model should be saved')
     parser.add_argument('-w', '--pretrained_weights', type = str, default = None, help = 'Path to pretrained weights file')
@@ -222,6 +229,7 @@ def parse_arguments():
     args = vars(parser.parse_args())
 
     return args
+
 
 if __name__ == '__main__':
 
