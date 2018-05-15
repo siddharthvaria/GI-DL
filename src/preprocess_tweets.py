@@ -9,6 +9,7 @@ import cPickle as pickle
 from data_utils.utils import unicode_csv_reader2, parse_line, get_delimiter, datum_to_string, delete_files
 import numpy as np
 
+
 def read_stop_chars(stop_chars_file):
     if stop_chars_file is None:
         return None
@@ -18,6 +19,7 @@ def read_stop_chars(stop_chars_file):
             ch = line.split('\t')[0].strip()
             stop_chars.append(ch)
     return set(stop_chars)
+
 
 class TweetPreprocessor:
 
@@ -160,7 +162,11 @@ class TweetPreprocessor:
         return W
 
     def load_w2v(self, embedding_file):
-        word2vec = KeyedVectors.load_word2vec_format(embedding_file, binary = True)
+        if embedding_file.endswith('.bin'):
+            binary = True
+        else:
+            binary = False
+        word2vec = KeyedVectors.load_word2vec_format(embedding_file, binary = binary)
         print('Found %s word vectors of word2vec' % len(word2vec.vocab))
         return word2vec
 
@@ -300,10 +306,12 @@ class TweetPreprocessor:
         print 'Tweet drop statistics:'
         print tweets_dropped
 
+
 def print_args(args):
 
     for k, v in args.iteritems():
         print k, v
+
 
 def main(args):
 
@@ -346,6 +354,7 @@ def main(args):
     # tweet_preprocessor.split_unlabeled_data(args['output_file_dir'], args['tweets_file'], split_ratio = 0.2)
     pickle.dump([W, tweet_preprocessor.token2idx, tweet_preprocessor.label2idx, tweet_preprocessor.counts, tweet_preprocessor.class_weights, tweet_preprocessor.max_len], open(os.path.join(args['output_file_dir'], 'dictionaries_' + time_stamp + '.p'), "wb"))
     tweet_preprocessor.print_stats()
+
 
 if __name__ == '__main__':
 

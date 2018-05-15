@@ -3,6 +3,7 @@ import datetime
 from sklearn.metrics import classification_report
 from cnn_lm_nce import CNN_Model
 from data_utils.TweetReader2 import TweetCorpus
+from tensorflow_impl.train_cnn_lm_nce import binarize_labels
 import numpy as np
 import tensorflow as tf
 from train_clf import batch_iter
@@ -11,6 +12,7 @@ from train_clf import dev_step
 
 def test_clf(sess, model, args, corpus):
     _, _, X_test, _, _, y_test = corpus.get_data_for_classification()
+    y_test = binarize_labels(y_test, args['pos_classes'], corpus.label2idx)
 
     saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES), max_to_keep = 1)
 
@@ -69,7 +71,7 @@ def parse_arguments():
     parser.add_argument('-w', '--pretrained_weights', type = str, default = None, help = 'Path to pretrained weights file')
     parser.add_argument('-nfmaps', '--nfeature_maps', type = int, default = 200)
     parser.add_argument('-bsz', '--batch_size', type = int, default = 256)
-
+    parser.add_argument('-pc', '--pos-classes', nargs = '+', default = [])
     args = vars(parser.parse_args())
 
     return args

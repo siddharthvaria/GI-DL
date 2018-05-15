@@ -105,17 +105,17 @@ def get_correlations(inputs, targets, idx2token, stop_words = None, mask_value =
             zero_cnt_words += 1
             continue
 
-        corrcoef[ii] = np.corrcoef(np.squeeze(_col.todense()), targets)[0, 1]
+        corrcoef[ii] = max(0.0, np.corrcoef(np.squeeze(_col.todense()), targets)[0, 1])
         mx_corrcoef = max(mx_corrcoef, corrcoef[ii])
         mn_corrcoef = min(mn_corrcoef, corrcoef[ii])
 
     print('Maximum correlation:', mx_corrcoef)
     print('Minimum correlation:', mn_corrcoef)
     print('Number of words with zero count:', zero_cnt_words)
-    corrcoef = np.abs(corrcoef)
+    # corrcoef = np.abs(corrcoef)
     corrcoef += 1e-9
     # normalize correlations to convert into distribution
-    corrcoef = corrcoef / np.sum(corrcoef)
+    # corrcoef = corrcoef / np.sum(corrcoef)
     return corrcoef
 
 
@@ -310,7 +310,7 @@ def train_lm(sess, model, args, corpus):
 
     stop_words = get_stopwords(args['stop_words_file'])
 
-    targets = binarize_labels(corpus.tr_data.y, args['pos_classes'], corpus.label2idx)
+    targets = corpus.tr_data.y
 
     correlations = get_correlations(corpus.tr_data.X, targets, corpus.idx2token, stop_words, mask_value = corpus.pad_token_idx)
     freqs = get_frequencies(corpus.counts, corpus.token2idx, stop_words, mask_value = corpus.pad_token_idx)
@@ -356,10 +356,48 @@ def train_lm(sess, model, args, corpus):
             break
 
 
+def get_class_weights(label2idx, label2count):
+
+    class_weights = {}
+
+    total = 0.0
+    for cls in label2count.keys():
+        total += (float(1) / label2count[cls])
+
+    if total <= 0.0:
+        return
+
+    K = float(1) / total
+
+    n_classes = len(label2idx)
+    for i in xrange(n_classes):
+        class_weights[i] = (K / label2count[i])
+
+    return class_weights
+
+
+def binarize(corpus, pos_classes):
+    corpus.tr_data.y = binarize_labels(corpus.tr_data.y, pos_classes, corpus.label2idx)
+    if corpus.val_data is not None:
+        corpus.val_data.y = binarize_labels(corpus.val_data.y, pos_classes, corpus.label2idx)
+    corpus.label2idx = {pos_classes[0]: 1, 'Rest':0}
+    unique, counts = np.unique(corpus.tr_data.y, return_counts = True)
+    label2count = dict(zip(unique, counts))
+    print 'label2count: ', label2count
+    corpus.class_weights = get_class_weights(corpus.label2idx, label2count)
+    print 'corpus.class_weights: ', corpus.class_weights
+
+
 def main(args):
 
     # train_file = None, val_file = None, test_file = None, unld_train_file = None, unld_val_file = None, dictionaries_file = None
     corpus = TweetCorpus(args['train_file'], None, None, args['unld_train_file'], args['unld_val_file'], args['dictionaries_file'])
+
+    if args['binary']:
+        binarize(corpus, args['pos_classes'])
+    else:
+        # CFP still needs binary labels in order to compute the correlation scores
+        corpus.tr_data.y = binarize_labels(corpus.tr_data.y, args['pos_classes'], corpus.label2idx)
 
     ts = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     args['ts'] = ts
@@ -377,7 +415,7 @@ def main(args):
                                num_classes = len(corpus.label2idx),
                                vocab_size = len(corpus.token2idx),
                                embedding_size = len(corpus.W[0]),
-                               filter_sizes = [1, 2, 3, 4, 5],
+                               filter_sizes = [1, 2],
                                num_filters = args['nfeature_maps'],
                                embeddings = corpus.W,
                                class_weights = class_weights,
@@ -404,11 +442,12 @@ def parse_arguments():
     parser.add_argument('-unld_tr', '--unld_train_file', type = str, default = None)
     parser.add_argument('-unld_val', '--unld_val_file', type = str, default = None)
     parser.add_argument('-epochs', '--n_epochs', type = int, default = 12)
-    parser.add_argument('-nfmaps', '--nfeature_maps', type = int, default = 200)
+    parser.add_argument('-nfmaps', '--nfeature_maps', type = int, default = 300)
     parser.add_argument('-do', '--dropout', type = float, default = 0.5)
     parser.add_argument('-bsz', '--batch_size', type = int, default = 256)
     parser.add_argument('-np', '--num_pos', type = int, default = 2, help = 'Number of positive tokens to sample per input')
     parser.add_argument('-nn', '--num_neg', type = int, default = 10, help = 'Number of negative tokens to sample per a positive token')
+    parser.add_argument('-b', '--binary', type = bool, default = False, help = 'If binary is True, then pos-classes will be used to identify the positive classes.')
     parser.add_argument('-pc', '--pos-classes', nargs = '+', default = [])
 
     args = vars(parser.parse_args())

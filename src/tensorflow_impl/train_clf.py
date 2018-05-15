@@ -10,8 +10,10 @@ import time
 from Nadam import NadamOptimizer
 from cnn_lm_nce import CNN_Model
 from data_utils.TweetReader2 import TweetCorpus
+from tensorflow_impl.train_cnn_lm_nce import binarize
 import numpy as np
 import tensorflow as tf
+import cPickle as pickle
 
 
 def batch_iter(data, batch_size, shuffle = False):
@@ -98,7 +100,7 @@ def train_clf(sess, model, args, corpus):
     sess.run(tf.global_variables_initializer())
 
     if args['pretrained_weights'] is not None:
-        print 'Restoring weights from existing checkpoint . . .'
+        print 'Restoring weights from existing checkpoint %s' % (args['pretrained_weights'])
         saver.restore(sess, args['pretrained_weights'])
 
     def train_step(x_batch, y_batch):
@@ -118,7 +120,7 @@ def train_clf(sess, model, args, corpus):
 
         return loss, probabilities
 
-    X_tr, X_val, X_test, y_tr, y_val, y_test = corpus.get_data_for_classification()
+    X_tr, X_val, _, y_tr, y_val, _ = corpus.get_data_for_classification()
 
     best_val_f = 0
     # best_val_loss = 1e9
@@ -175,11 +177,15 @@ def train_clf(sess, model, args, corpus):
             break
 
     print classification_report(y_val, np.argmax(best_val_probabilities, axis = 1), target_names = corpus.get_class_names())
+    pickle.dump([y_val, best_val_probabilities], open(os.path.join(args['model_save_dir'], 'probabilities' + '_' + args['pos_classes'][0] + '.p'), 'wb'))
 
 
 def main(args):
 
     corpus = TweetCorpus(train_file = args['train_file'], val_file = args['val_file'], test_file = None , dictionaries_file = args['dictionaries_file'])
+
+    if args['binary']:
+        binarize(corpus, args['pos_classes'])
 
     ts = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     args['ts'] = ts
@@ -198,7 +204,7 @@ def main(args):
                                num_classes = len(corpus.label2idx),
                                vocab_size = len(corpus.token2idx),
                                embedding_size = len(corpus.W[0]),
-                               filter_sizes = [1, 2, 3, 4, 5],
+                               filter_sizes = [1, 2],
                                num_filters = args['nfeature_maps'],
                                embeddings = corpus.W,
                                class_weights = class_weights)
@@ -222,9 +228,11 @@ def parse_arguments():
     parser.add_argument('-sdir', '--model_save_dir', type = str, help = 'directory where trained model should be saved')
     parser.add_argument('-w', '--pretrained_weights', type = str, default = None, help = 'Path to pretrained weights file')
     parser.add_argument('-epochs', '--n_epochs', type = int, default = 30)
-    parser.add_argument('-nfmaps', '--nfeature_maps', type = int, default = 200)
+    parser.add_argument('-nfmaps', '--nfeature_maps', type = int, default = 300)
     parser.add_argument('-do', '--dropout', type = float, default = 0.5)
     parser.add_argument('-bsz', '--batch_size', type = int, default = 256)
+    parser.add_argument('-b', '--binary', type = bool, default = False, help = 'If binary is True, then pos-classes will be used to identify the positive class.')
+    parser.add_argument('-pc', '--pos-classes', nargs = '+', default = [])
 
     args = vars(parser.parse_args())
 
